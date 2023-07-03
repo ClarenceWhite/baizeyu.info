@@ -1,9 +1,8 @@
 title: Blog | Zeyu Bai
 email: clarencehwite98@outlook.com
 description: >-
-baseurl: "baizeyu.info"
-url: "baizeyu.info"
-twitter_username:
+baseurl: "https://clarencewhite.github.io"
+url: "/baizeyu.info"
 github_username: ClarenceWhite
 
 # Build settings
