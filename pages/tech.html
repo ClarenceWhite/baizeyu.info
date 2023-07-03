@@ -1,0 +1,46 @@
+---
+layout: default
+title: Tech
+subcategories:
+  - name: Java
+    image: /assets/images/java.png
+    description: Basics and advanced Java techniques...
+  - name: Python
+    image: /assets/images/python.png
+    description: You can use python for everything from web development to machine learning...
+  - name: Frontend
+    image: /assets/images/frontend.png
+    description: HTML, CSS, and JavaScript (React.js, Xterm.js, etc...)
+  - name: Database
+    image: /assets/images/database.png
+    description: SQL and noSQL databases...
+  - name: Containerize
+    image: /assets/images/docker.png
+    description: All you need to know about the most popular containerizing tools...
+  - name: Kubernetes
+    image: /assets/images/k8s.png
+    description: The most widely used app orchestrator...
+  - name: Computer Network
+    image: /assets/images/network.png
+    description: An interesting topic :)
+  - name: Certificates
+    image: /assets/images/certification.png
+    description: Get the most useful certificates and boost your career!
+---
+
+<div class="tech container-fluid">
+    <div class="row">
+        {% for subcategory in page.subcategories %}
+        <div class="col-md-5">
+            <div class="card mb-4 shadow-sm">
+                <img class="card-img-top" src="{{ subcategory.image }}" alt="{{ subcategory.name }} logo">
+                <div class="card-body">
+                    <h2><a href="/categories/{{ page.title | downcase }}/{{ subcategory.name }}">{{ subcategory.name
+                            }}</a></h2>
+                    <p class="card-text">{{ subcategory.description }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

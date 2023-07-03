@@ -1,0 +1,138 @@
+body {
+    font-family: "Merriweather", serif; /* 更新为 Merriweather 字体，这是一种非常适合阅读的衬线字体 */
+    background-color: #fafafa; /* 添加浅色背景色以减少视觉疲劳 */
+    color: #333; /* 设置默认文本颜色为深灰色，增加对比度 */
+    line-height: 1.6; /* 增加行高以改善阅读体验 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+}
+
+.title h1,
+#toc {
+    font-family: "Roboto", sans-serif;
+}
+
+.post {
+    width: 80vw; /* 将宽度调整为80vw，以使页面在大屏幕上更集中 */
+    max-width: 1200px; /* 添加最大宽度以控制在大屏幕上的显示 */
+    padding: 2rem 2rem;
+    background-color: #fff; /* 添加背景色以区分内容区域 */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* 添加轻微的阴影增加深度感 */
+    box-sizing: border-box;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: auto;
+}
+
+.title {
+    text-align: center;
+    padding-bottom: 2rem;
+    width: 100%;
+}
+
+.title h1 {
+    color: #333; /* 深化标题颜色 */
+    font-size: 2.5em; /* 增加标题字体大小 */
+}
+
+.content-area {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    overflow-y: auto;
+    font-size: large;
+}
+
+
+#toc::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    border-right: 2px solid #ddd; /* 使分隔线颜色更浅 */
+}
+
+.blog-content {
+    flex: 0 0 80%;
+    padding-left: 2rem;
+    height: 100%;
+    overflow-x: hidden; /* No horizontal scrolling */
+    overflow-y: auto;
+    text-align: justify;
+}
+
+.blog-content img {
+    max-width: 100%; 
+    height: auto; 
+}
+
+#toc {
+    border-right: 1px solid #ddd;
+    flex: 0 0 20%;
+    height: 100%;
+    position: relative;
+    font-size: medium;
+}
+
+#toc a {
+    color: #333;
+    text-decoration: none;
+}
+
+#toc a:hover {
+    color: cornflowerblue;
+    text-decoration: underline;
+}
+
+/* Add styles for different levels of table of contents entries */
+.toc-h1 {
+    font-size: 1.2em;
+    margin-left: 0;
+}
+
+.toc-h2 {s
+    font-size: 1.1em;
+    margin-left: 1em;
+}
+
+.toc-h3 {
+    font-size: 1em;
+    margin-left: 2em;
+}
+
+.toc-h4 {
+    font-size: 0.9em;
+    margin-left: 3em;
+}
+
+.toc-h5 {
+    font-size: 0.8em;
+    margin-left: 4em;
+}
+
+.toc-h6 {
+    font-size: 0.7em;
+    margin-left: 5em;
+}
+
+/* for all code blocks */
+/* pre code {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    padding: 10px;
+    color: #d14;
+    white-space: pre-wrap;
+} */
+

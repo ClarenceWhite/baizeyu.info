@@ -1,0 +1,14 @@
+title: Blog | Zeyu Bai
+email: clarencehwite98@outlook.com
+description: >-
+baseurl: ""
+url: ""
+twitter_username:
+github_username: ClarenceWhite
+
+# Build settings
+theme: minima
+
+# outline generator
+plugins:
+    - jekyll-toc
