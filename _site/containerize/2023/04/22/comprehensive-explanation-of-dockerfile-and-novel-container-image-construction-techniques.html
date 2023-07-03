@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>Comprehensive explanation of Dockerfile and novel container image construction techniques</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="1-the-relationship-between-container-and-image">1. The relationship between container and image</h1>
+
+<p>Speaking of containers managed by Docker, we have to mention container images because they serve as the templates for containers. It is through container images that we can quickly create containers.</p>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-22-12-29-36.jpg" id="blog-image" />
+</p>
+
+<blockquote>
+  <p>Docker Daemon creates containers using images</p>
+</blockquote>
+
+<h1 id="2-classification-of-images">2. Classification of images</h1>
+
+<ul>
+  <li>OS
+    <ul>
+      <li>CentOS</li>
+      <li>Ubuntu</li>
+    </ul>
+  </li>
+  <li>Application
+    <ul>
+      <li>Tomcat</li>
+      <li>Nginx</li>
+      <li>MySQL</li>
+      <li>Redis</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="3-how-to-get-images">3. How to get images?</h1>
+
+<ol>
+  <li>
+    <p>From DockerHub</p>
+  </li>
+  <li>
+    <p>Make the system-related files in an OS into image</p>
+  </li>
+  <li>
+    <p>Using docker commit to make a running container into a new image</p>
+  </li>
+  <li>
+    <p>Use Dockerfile to build an image</p>
+  </li>
+</ol>
+
+<h1 id="4-a-demo-using-method-3--4-above">4. A demo using method 3 &amp; 4 above</h1>
+
+<h2 id="41-make-a-running-container-into-an-image">4.1 Make a running container into an image</h2>
+
+<h3 id="411-run-a-container-firstly">4.1.1 Run a container firstly</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it ubuntu
+</code></pre></div></div>
+
+<h3 id="412-install-an-app-in-the-container">4.1.2 Install an app in the container</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt-get update -y &amp;&amp; \
+apt-get install apache2 -y &amp;&amp; \
+apt-get install systemctl &amp;&amp; \
+systemctl enable apache2 &amp;&amp; \
+systemctl start apache2
+</code></pre></div></div>
+
+<p>Please use <code class="language-plaintext highlighter-rouge">curl localhost</code> to verify whether the apache2 http server is running.</p>
+
+<h3 id="413-make-it-into-an-image">4.1.3 Make it into an image</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@master-01:~# docker ps
+CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS         PORTS                                   NAMES
+a83d4a14e3c6   ubuntu            "/bin/bash"              30 minutes ago   Up 3 minutes                                           brave_leakey
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker commit -a "Clarence" a83d4a14e3c6 ubuntu-apache2:v1
+# sha256:dbc4bd399ef0c4e7c50425ff9de73711e121bbdf14cd960ed181ff62d90ea1bd
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@master-01:~# docker image ls
+REPOSITORY       TAG       IMAGE ID       CREATED         SIZE
+ubuntu-apache2   v1        a86e18671cbb   3 seconds ago   242MB
+</code></pre></div></div>
+
+<p>We can see that the size of the new image is bigger than the official ubuntu:latest image, that means we successfully added something into the iamge.</p>
+
+<h2 id="42-use-dockerfile">4.2 Use Dockerfile</h2>
+
+<h3 id="421-intro-to-dockerfile">4.2.1 Intro to Dockerfile</h3>
+
+<p>A Dockerfile is a script that can be interpreted by the Docker program. It is made up of a series of instructions, each with its own syntax and supported commands. When we need to specify additional requirements in a container image, we can add or modify instructions in the Dockerfile, and then use <code class="language-plaintext highlighter-rouge">docker build</code> to generate our custom container image.</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-22-12-30-40.jpg" id="blog-image" /></p>
+
+<h3 id="422-dockerfile-commands">4.2.2 Dockerfile commands</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FROM</td>
+      <td>The base image upon which the new image is built</td>
+    </tr>
+    <tr>
+      <td>LABEL</td>
+      <td>A tag</td>
+    </tr>
+    <tr>
+      <td>RUN</td>
+      <td>Shell commands executed during image build</td>
+    </tr>
+    <tr>
+      <td>COPY</td>
+      <td>Copy local file to image</td>
+    </tr>
+    <tr>
+      <td>ADD</td>
+      <td>Similar to COPY, but can auto-unzip zip files</td>
+    </tr>
+    <tr>
+      <td>ENV</td>
+      <td>Environment variables</td>
+    </tr>
+    <tr>
+      <td>USER</td>
+      <td>To specify the user to run commands for RUN, CMD and ENTRYPOINT</td>
+    </tr>
+    <tr>
+      <td>EXPOSE</td>
+      <td>To declare the service port for container runtime</td>
+    </tr>
+    <tr>
+      <td>WORKDIR</td>
+      <td>To set working directory for RUN, CMD, ENTRYPOINT, COPY and ADD</td>
+    </tr>
+    <tr>
+      <td>CMD</td>
+      <td>When running a container, the default CMD instruction is executed. If there are multiple CMD instructions, only the last one takes effect</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>(<code class="language-plaintext highlighter-rouge">man dockerfile</code> can be used to for helping)</p>
+
+<ol>
+  <li><strong>FROM</strong></li>
+</ol>
+
+<p>The FROM instruction is used to specify the base image that will be used to build a new image in Dockerfile.</p>
+
+<p>The FROM instruction must be the first line in the Dockerfile.</p>
+
+<p>The base image specified by the FROM instruction can be from the official remote repository, or it can be in the local repository, with priority given to the local repository.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: FROM &lt;image&gt;:&lt;tag&gt;
+e.g.: FROM ubuntu:latest
+</code></pre></div></div>
+
+<ol>
+  <li><strong>RUN</strong></li>
+</ol>
+
+<p>“The RUN instruction is used to execute commands during the image build process, and it has the following two formats:”</p>
+
+<ul>
+  <li>shell format</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: RUN &lt;commands&gt;
+e.g.: RUN echo 'hello world' &gt; /var/www/html/index.html
+</code></pre></div></div>
+
+<ul>
+  <li>exec format</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: RUN ["executable file", "arg1", "arg2"]
+e.g.: RUN ["/bin/bash", "-c", "echo 'hello' &gt; /var/www/html/index.html"]
+</code></pre></div></div>
+
+<p><strong>Note:</strong> From an optimization perspective, when there are multiple commands to be executed, do not use multiple RUN instructions. Instead, try to use the &amp;&amp; and \ symbols to connect them into one line, because using multiple RUN instructions will create multiple layers in the image.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RUN yum install httpd httpd-devel -y
+RUN echo test &gt; /var/www/html/index.html
+
+can be turned into:
+RUN yum install httpd httpd-devel -y &amp;&amp; echo test &gt; /var/www/html/index.html
+
+or:
+RUN yum install httpd httpd-devel -y  \
+    &amp;&amp; echo test &gt; /var/www/html/index.html
+</code></pre></div></div>
+
+<ol>
+  <li><strong>CMD</strong></li>
+</ol>
+
+<p>CMD is different from RUN. CMD is used to specify the command to be executed when the container starts, while RUN is used to specify the command to be executed during image building.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>There are 3 formats of CMD:
+CMD ["executable","param1","param2"]
+CMD ["param1","param2"]
+CMD command param1 param2
+</code></pre></div></div>
+
+<p>Each Dockerfile can only have one CMD instruction. If multiple commands are specified, only the last one will be executed.</p>
+
+<p>If the user specifies a command to run when starting the container, it will override the command specified by CMD.</p>
+
+<p>What is command to run when starting a container?
+<code class="language-plaintext highlighter-rouge">docker run -d -p 80:80 [image_name] [commands]</code></p>
+
+<ol>
+  <li><strong>EXPOSE</strong></li>
+</ol>
+
+<p>The EXPOSE instruction is used to specify the port that the container will listen on during runtime.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: EXPOSE &lt;port&gt; [&lt;port&gt;...]
+e.g.: EXPOSE 80 3306 8080
+</code></pre></div></div>
+
+<p>The port mentioned above needs to be mapped to the host port using the -p parameter when running the container with docker run.</p>
+
+<ol>
+  <li><strong>ENV</strong></li>
+</ol>
+
+<p>The ENV instruction is used to specify an environment variable.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: ENV &lt;key&gt; &lt;value&gt; or ENV &lt;key&gt;=&lt;value&gt;
+e.g.: ENV JAVA_HOME=/usr/local/jdkxxxx/
+</code></pre></div></div>
+
+<ol>
+  <li><strong>ADD</strong></li>
+</ol>
+
+<p>The ADD instruction is used to copy files from the host machine to the image.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: ADD &lt;src&gt; &lt;dest&gt;
+The &lt;src&gt; can be a local file or directory, a compressed file, or a URL. If &lt;src&gt; is a URL, then ADD works similarly to the wget command.
+
+The &lt;dest&gt; path can be an absolute path within the container, or a relative path to the working directory.
+</code></pre></div></div>
+
+<ol>
+  <li><strong>COPY</strong></li>
+</ol>
+
+<p>The COPY instruction is similar to the ADD instruction, but the source files for COPY can only be local files.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: COPY &lt;src&gt; &lt;dest&gt;
+</code></pre></div></div>
+
+<ol>
+  <li><strong>ENTRYPOINT</strong></li>
+</ol>
+
+<p>ENTRYPOINT is similar to CMD</p>
+
+<p>Similarities:
+Only one instruction should be written per Dockerfile. If multiple instructions are written, only the last one will take effect.</p>
+
+<p>Differences:
+If the user specifies a command to run when starting the container, the specified command will not override the ENTRYPOINT instruction, but it will override the CMD instruction.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>There are two formats:
+ENTRYPOINT ["executable", "param1", "param2"]
+ENTRYPOINT command param1 param2
+</code></pre></div></div>
+
+<ol>
+  <li><strong>VOLUME</strong></li>
+</ol>
+
+<p>The VOLUME instruction is used to map a directory on the host machine to a directory in the container.</p>
+
+<p>When only specifying the mount point in the VOLUME instruction, Docker will create a new volume for the container, and the directory on the host machine that corresponds to the volume will be automatically generated.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: VOLUME ["&lt;mountpoint&gt;"]
+</code></pre></div></div>
+
+<ol>
+  <li><strong>USER</strong></li>
+</ol>
+
+<p>The USER instruction sets the user who starts the container (such as Hadoop requires Hadoop user operation, Oracle requires Oracle user operation), and can be either a username or UID.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USER daemon
+USER 1001
+</code></pre></div></div>
+
+<p><strong>Note</strong>: If the container is set to run as the daemon user, then RUN, CMD, and ENTRYPOINT will all run as that user. After the image build is complete, when running the container with <code class="language-plaintext highlighter-rouge">docker run</code>, you can use the <code class="language-plaintext highlighter-rouge">-u</code> parameter to override the specified user.</p>
+
+<ol>
+  <li><strong>WORKDIR</strong></li>
+</ol>
+
+<p>The WORKDIR instruction sets the working directory, similar to the cd command. It is not recommended to use <code class="language-plaintext highlighter-rouge">RUN cd /root</code>; instead, it is recommended to use the WORKDIR instruction.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WORKDIR /root
+</code></pre></div></div>
+
+<h3 id="423-use-dockerfile-to-build-an-image-demo-nginx-ubuntu">4.2.3 Use Dockerfile to build an image demo (nginx ubuntu)</h3>
+
+<p>Let’s make a directory first:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir nginx-image-make
+cd nginx-image-make/
+</code></pre></div></div>
+
+<p>Make an html file:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "I am building an nginx image..." &gt; index.html
+</code></pre></div></div>
+
+<p>Make a Dockerfile:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim Dockerfile
+--------------------------
+# base image
+FROM ubuntu
+# author
+MAINTAINER "clarencewhite9807@gmail.com"
+# install nginx
+RUN apt-get -y update &amp;&amp; apt-get install nginx -y
+# copy index.html from local to image
+ADD index.html /var/www/html/index.nginx-debian.html
+# make nginx as a foreground service
+RUN echo "daemon off;" &gt;&gt; /etc/nginx/nginx.conf
+# port in container
+EXPOSE 80
+# run the executable file on container start to start nginx service
+CMD /usr/sbin/nginx
+</code></pre></div></div>
+
+<p>Build the image using Dockerfile:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t ubuntu-nginx:v1 .
+</code></pre></div></div>
+
+<p>Check the image we built just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker image ls
+
+REPOSITORY       TAG       IMAGE ID       CREATED        SIZE
+ubuntu-nginx     v1        d8e8e2e8b89d   15 hours ago   163MB
+</code></pre></div></div>
+
+<p>Run the image as a container and check the default html page:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run ubuntu-nginx:v1 -d -p 9000:80
+
+docker ps
+-------------
+CONTAINER ID   IMAGE             COMMAND                  CREATED        STATUS        PORTS                                   NAMES
+9fce15688a3c   ubuntu-nginx:v1   "/bin/sh -c /usr/sbi…"   15 hours ago   Up 15 hours   0.0.0.0:9000-&gt;80/tcp, :::9000-&gt;80/tcp   condescending_ganguly
+
+curl localhost:9000
+-------------
+I am building an nginx image...
+</code></pre></div></div>
+
+<h2 id="43-optimizing-container-image-generation-using-dockerfile">4.3 Optimizing container image generation using Dockerfile</h2>
+
+<h3 id="431-reducing-image-layers">4.3.1 Reducing image layers</h3>
+
+<p>In a Dockerfile, there are multiple types of instructions. Among them, the RUN command is probably the most commonly used instruction when it comes to deployment. When using the RUN command, it is not recommended to use a separate RUN command for each installation. Instead, you can combine multiple installation commands into a single RUN command. This reduces the number of image layers.</p>
+
+<p><strong>Bad version:</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+RUN yum install epel-release -y
+RUN yum install -y gcc gcc-c++ make -y
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz
+RUN tar zxf php-5.6.36.tar.gz
+RUN cd php-5.6.36
+RUN ./configure --prefix=/usr/local/php
+RUN make -j 4
+RUN make install
+EXPOSE 9000
+CMD ["php-fpm"]
+</code></pre></div></div>
+
+<p><strong>Better version:</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+RUN yum install epel-release -y &amp;&amp; \
+    yum install -y gcc gcc-c++ make
+
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz &amp;&amp; \
+    tar zxf php-5.6.36.tar.gz &amp;&amp; \
+    cd php-5.6.36 &amp;&amp; \
+    ./configure --prefix=/usr/local/php &amp;&amp; \
+    make -j 4 &amp;&amp; make install
+EXPOSE 9000
+CMD ["php-fpm"]
+</code></pre></div></div>
+
+<h3 id="432-cleaning-up-unused-data">4.3.2 Cleaning up unused data</h3>
+
+<ul>
+  <li>When using the RUN command in a Dockerfile, every time a new layer is created. If files are not deleted in the same layer where they were created, they will be carried on to another layer regardless of whether they are ultimately deleted or not. Therefore, it’s important to clean up any residual data in each layer to minimize the size of the image.</li>
+  <li>Additionally, it’s recommended to delete the application software packages used during the container image generation process.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+
+RUN yum install epel-release -y &amp;&amp; \
+    yum install -y gcc gcc-c++ make gd-devel libxml2-devel \
+    libcurl-devel libjpeg-devel libpng-devel openssl-devel \
+    libmcrypt-devel libxslt-devel libtidy-devel autoconf \
+    iproute net-tools telnet wget curl &amp;&amp; \
+    yum clean all &amp;&amp; \
+    rm -rf /var/cache/yum/*
+
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz &amp;&amp; \
+    tar zxf php-5.6.36.tar.gz &amp;&amp; \
+    cd php-5.6.36 &amp;&amp; \
+    ./configure --prefix=/usr/local/php \
+    make -j 4 &amp;&amp; make install &amp;&amp; \
+    cd / &amp;&amp; rm -rf php*
+</code></pre></div></div>
+
+<h3 id="433-multi-stage-build-image">4.3.3 Multi-stage build image</h3>
+
+<p>There are two types of project container images: one copies the project code directly into the container image, which can be launched directly when using the container image the next time; and another type compiles the project source code and then copies it to the container image.</p>
+
+<p>Both methods make the process of creating an image more complex and can result in large container images. It is recommended to use a multi-stage build approach to simplify the creation process and reduce the size of the container image.</p>
+
+<p>An example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM maven AS build
+ADD ./pom.xml pom.xml
+ADD ./src src/
+RUN mvn clean package
+
+FROM baizeyu/tomcat
+RUN rm -rf /usr/local/tomcat/webapps/ROOT
+COPY --from=build target/*.war /usr/local/tomcat/webapps/ROOT.war
+</code></pre></div></div>
+
+<p>The first stage uses the official Maven image as a base image and is named build. The ADD command is used to copy the pom.xml file and the source code files from the local directory to the container. The RUN command starts the Maven build process, which compiles the source code and generates the WAR file. The result of this stage is a new image with the compiled application ready for deployment in the next stage.</p>
+
+<p>The second stage uses a custom Tomcat image named baizeyu/tomcat as the base image. The RUN command removes the default ROOT web application from the Tomcat container. The COPY command retrieves the previously built WAR file from the build stage using the –from flag and copies it to the Tomcat server’s webapps directory with the name ROOT.war.</p>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

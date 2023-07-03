@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>Docker Architecture and Deployment</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="1-architecture">1. Architecture</h1>
+
+<h2 id="11-docker-containers-are-everywhere">1.1 Docker Containers Are Everywhere</h2>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-12-13-55-36.jpg" id="blog-image" width="500" />
+</p>
+
+<h2 id="12-architecture">1.2 Architecture</h2>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-12-13-56-12.jpg" id="blog-image" />
+</p>
+
+<h3 id="121-docker-host">1.2.1 Docker Host</h3>
+
+<p>The host used to install the Docker daemon is known as the Docker Host, which can run containers based on container images.</p>
+
+<h3 id="122-docker-daemon">1.2.2 Docker daemon</h3>
+
+<p>It is used to manage the containers, container images, container networks, etc. running on the Docker Host, and manages the containers provided by Containerd.io.</p>
+
+<h3 id="123-registry">1.2.3 Registry</h3>
+
+<p>Container image repository is used to store the generated container runtime templates. When users use it, they can directly download container images from the repository, which is the container runtime template, and then run the applications contained in the container image. For example, Docker Hub, or you can use Harbor to implement a private container image repository for enterprises.</p>
+
+<h3 id="124-docker-client">1.2.4 Docker client</h3>
+
+<p>The Docker Daemon client tool is used to communicate with the Docker Daemon, execute user commands, and can be deployed on the Docker Host or other hosts as long as it can connect to the Docker Daemon to operate.</p>
+
+<h3 id="125-image">1.2.5 Image</h3>
+
+<p>The template file that packages the application runtime environment and computing resources in a way that can be reused to start a container is used primarily to launch a container based on it, and is an immutable infrastructure.</p>
+
+<h3 id="126-container">1.2.6 Container</h3>
+
+<p>It is an environment for running an application that is generated from a container image. It includes all the files in the container image and any files added by the user later. It belongs to the read-write layer generated based on the container image, and it is also the active space for the application.</p>
+
+<h3 id="127-docker-dashboard">1.2.7 Docker Dashboard</h3>
+
+<blockquote>
+  <p>Only available for Mac and Windows</p>
+</blockquote>
+
+<p>Docker Dashboard provides a simple interface that allows you to manage your containers, applications, and images directly from your machine without using the CLI to perform core operations.</p>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-12-13-57-5.jpg" id="blog-image" />
+</p>
+
+<h2 id="13-docker-versions">1.3 Docker Versions</h2>
+
+<ul>
+  <li>Docker-ce is the community edition of Docker, primarily used for personal developer testing and is a free version.</li>
+  <li>Docker-ee is the enterprise edition of Docker, primarily used for enterprise development and application deployment and is a paid version. It offers a free trial period of one month.</li>
+</ul>
+
+<h1 id="2-docker-installation">2. Docker Installation</h1>
+
+<blockquote>
+  <p>We are going to use Ubuntu server, so just follow the official doc!</p>
+</blockquote>
+
+<p><a href="https://docs.docker.com/engine/install/">Click here to go to the official installation guide</a>, just select the doc that suits your operating system in sidebar.</p>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

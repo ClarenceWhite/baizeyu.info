@@ -1,0 +1,3845 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.2">Jekyll</generator><link href="baizeyu.info/baizeyu.info/feed.xml" rel="self" type="application/atom+xml" /><link href="baizeyu.info/baizeyu.info/" rel="alternate" type="text/html" /><updated>2023-07-04T00:12:39+01:00</updated><id>baizeyu.info/baizeyu.info/feed.xml</id><title type="html">Blog | Zeyu Bai</title><subtitle></subtitle><entry><title type="html">Docker Compose</title><link href="baizeyu.info/baizeyu.info/containerize/2023/05/01/docker-compose.html" rel="alternate" type="text/html" title="Docker Compose" /><published>2023-05-01T00:00:00+01:00</published><updated>2023-05-01T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/05/01/docker-compose</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/05/01/docker-compose.html"><![CDATA[<h1 id="1-why-compose">1. Why Compose?</h1>
+
+<p>To run a service in a container, you need to use the <code class="language-plaintext highlighter-rouge">docker run</code> command. But what if you want to run multiple services? Should you use one container or multiple containers?</p>
+
+<p>Running multiple services in one container can increase the complexity of the image and goes against Docker’s preference for one container per application. As a result, complex architectures require many containers that are dependent and connected to each other.</p>
+
+<p>This complexity requires a solution, which brings up the issue of container orchestration.</p>
+
+<ul>
+  <li>Compose
+    <ul>
+      <li>Orchestration
+        <ul>
+          <li>A method for starting and managing multiple containers</li>
+          <li>For example: start MySQL first, then Tomcat, and finally Nginx</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>Evolution of Service Architecture
+    <ul>
+      <li>Monolithic Service Architecture</li>
+      <li>Distributed Service Architecture</li>
+      <li>Microservice Architecture</li>
+      <li>Hyper-microservice Architecture</li>
+    </ul>
+  </li>
+  <li>Container Orchestration Tools
+    <ul>
+      <li>Docker Machine
+        <ul>
+          <li>A tool for deploying Docker container engines in virtual machines</li>
+        </ul>
+      </li>
+      <li>Docker Compose
+        <ul>
+          <li>A tool for defining and running multi-container Docker applications</li>
+        </ul>
+      </li>
+      <li>Docker Swarm
+        <ul>
+          <li>A tool for batch management and resource scheduling of Docker Hosts</li>
+        </ul>
+      </li>
+      <li>Mesos+Marathon
+        <ul>
+          <li>Mesos manages and schedules computer computing resources</li>
+          <li>Marathon provides service discovery and load balancing functions</li>
+        </ul>
+      </li>
+      <li>Kubernetes
+        <ul>
+          <li>An open source container orchestration tool developed by Google</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="2-docker-compose-intro">2. Docker Compose Intro</h1>
+
+<h2 id="21-terms">2.1 Terms</h2>
+
+<ul>
+  <li>
+    <p>Project: A group of related services that work together to provide an application.</p>
+  </li>
+  <li>Service: A container or group of containers that perform a specific task as part of the application.</li>
+  <li>Container: A standalone package of software that includes everything needed to run an application, and is isolated from other containers to ensure portability and consistency.</li>
+</ul>
+
+<h2 id="22-how-it-works-in-brief">2.2 How it works in brief</h2>
+
+<ol>
+  <li>Define a Dockerfile: this allows us to build an image anywhere.</li>
+  <li>Define a docker-compose.yaml file.</li>
+  <li>use <code class="language-plaintext highlighter-rouge">docker-compose up</code> to start an app.</li>
+</ol>
+
+<h1 id="3-docker-compose-installation">3. Docker Compose Installation</h1>
+
+<p>During the installation of Docker, I also installed all related tools, including <code class="language-plaintext highlighter-rouge">docker-compose</code>. Therefore, this command is already available on my machine.</p>
+
+<p>If you do not have this command, you can go to the official github release page: https://github.com/docker/compose/releases, find the package under ‘Assets’ that is suitable for your machine, download and install it.</p>
+
+<p>Or you can also follow the official documents: https://docs.docker.com/compose/install/, this might be easier for you.</p>
+
+<h1 id="4-docker-compose-demo">4. Docker Compose Demo</h1>
+
+<p>We are going to follow the official documents (https://docs.docker.com/compose/gettingstarted/) to start a simple redis-flask application on our linux machine.</p>
+
+<h2 id="41-define-the-application-dependencies">4.1 Define the application dependencies</h2>
+
+<p>Create a directory for the project:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir composetest
+cd composetest
+</code></pre></div></div>
+
+<p>Create a file called <code class="language-plaintext highlighter-rouge">app.py</code> in your project directory and paste the following code in:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim app.py
+----------------
+import time
+import redis
+from flask import Flask
+
+app = Flask(__name__)
+cache = redis.Redis(host='redis', port=6379)
+
+def get_hit_count():
+    retries = 5
+    while True:
+        try:
+            return cache.incr('hits')
+        except redis.exceptions.ConnectionError as exc:
+            if retries == 0:
+                raise exc
+            retries -= 1
+            time.sleep(0.5)
+
+@app.route('/')
+def hello():
+    count = get_hit_count()
+    return 'Hello World! I have been seen {} times.\n'.format(count)
+</code></pre></div></div>
+
+<p>Create another file called <code class="language-plaintext highlighter-rouge">requirements.txt</code> in your project directory and paste the following code in:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim requirements.txt
+----------------------
+flask
+redis
+</code></pre></div></div>
+
+<h2 id="42-create-a-dockerfile">4.2 Create a Dockerfile</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim Dockerfile
+--------------------
+# syntax=docker/dockerfile:1
+FROM python:3.7-alpine
+WORKDIR /code
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+RUN apk add --no-cache gcc musl-dev linux-headers
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+EXPOSE 5000
+COPY . .
+CMD ["flask", "run"]
+</code></pre></div></div>
+
+<h2 id="43-define-services-in-a-compose-file">4.3 Define services in a Compose file</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim docker-compose.yaml
+------------------------
+version: "3.9"
+services:
+  web:
+    build: .
+    ports:
+      - "8000:5000"
+  redis:
+    image: "redis:alpine"
+</code></pre></div></div>
+
+<h2 id="44-build-and-run-your-app-with-compose">4.4 Build and run your app with Compose</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker compose up
+-----------------------
+[+] Running 3/1
+ ✔ Network composetest_default    Created                                                                                                                                  0.1s
+ ✔ Container composetest-redis-1  Created                                                                                                                                  0.0s
+ ✔ Container composetest-web-1    Created                                                                                                                                  0.0s
+Attaching to composetest-redis-1, composetest-web-1
+composetest-redis-1  | 1:C 30 Apr 2023 00:31:54.724 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+composetest-redis-1  | 1:C 30 Apr 2023 00:31:54.724 # Redis version=7.0.11, bits=64, commit=00000000, modified=0, pid=1, just started
+composetest-redis-1  | 1:C 30 Apr 2023 00:31:54.724 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+composetest-redis-1  | 1:M 30 Apr 2023 00:31:54.725 * monotonic clock: POSIX clock_gettime
+composetest-redis-1  | 1:M 30 Apr 2023 00:31:54.725 * Running mode=standalone, port=6379.
+composetest-redis-1  | 1:M 30 Apr 2023 00:31:54.725 # Server initialized
+composetest-redis-1  | 1:M 30 Apr 2023 00:31:54.725 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+composetest-redis-1  | 1:M 30 Apr 2023 00:31:54.727 * Ready to accept connections
+composetest-web-1    |  * Serving Flask app 'app.py'
+composetest-web-1    |  * Debug mode: off
+composetest-web-1    | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+composetest-web-1    |  * Running on all addresses (0.0.0.0)
+composetest-web-1    |  * Running on http://127.0.0.1:5000
+composetest-web-1    |  * Running on http://172.18.0.2:5000
+composetest-web-1    | Press CTRL+C to quit
+</code></pre></div></div>
+
+<p>Open another terminal and visit:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl localhost:8000
+---------------------
+Hello World! I have been seen 1 times.
+</code></pre></div></div>
+
+<p>Visit again:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl localhost:8000
+--------------------
+Hello World! I have been seen 2 times.
+</code></pre></div></div>
+
+<p>Check docker images:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker image ls
+-----------------
+REPOSITORY        TAG       IMAGE ID       CREATED         SIZE
+composetest-web   latest    a224d19462e3   2 minutes ago   203MB
+redis             alpine    d196fde608b2   12 days ago     30.4MB
+nginx             latest    9e7e7b26c784   2 weeks ago     135MB
+</code></pre></div></div>
+
+<p>Great! This was just a quick and simple demonstration. If you want to learn more, I encourage you to visit the documentation I mentioned earlier at https://docs.docker.com/compose/gettingstarted/. There, you can find complete and detailed information on Docker Compose and its functionality.</p>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Why Compose?]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_compose.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_compose.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Mechanism for persistent storage of container data</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/29/mechanism-for-persistent-storage-of-container-data.html" rel="alternate" type="text/html" title="Mechanism for persistent storage of container data" /><published>2023-04-29T00:00:00+01:00</published><updated>2023-04-29T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/29/mechanism-for-persistent-storage-of-container-data</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/29/mechanism-for-persistent-storage-of-container-data.html"><![CDATA[<h1 id="1-introduction">1. Introduction</h1>
+
+<ul>
+  <li>
+    <p>Persistent storage for physical or virtual machines</p>
+
+    <ul>
+      <li>Since physical or virtual machines already have large-capacity disks, data can be directly stored in the local file system of the physical or virtual machine. Alternatively, additional storage systems such as NFS, GlusterFS, and Ceph can be used to achieve persistent data storage.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Persistent storage for Docker containers</p>
+    <ul>
+      <li>Since Docker containers are generated from container images, whatever files or directories are included in the container image can still be seen after the container is started.</li>
+      <li>As Docker containers are considered “disposable” computing resources, they are not suitable for persistent data storage.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="2-solutions">2. Solutions</h1>
+
+<p>Docker provides three ways to mount data from the host machine into a container:</p>
+
+<ul>
+  <li>docker run -v (‘v’ stands for volume)
+    <ul>
+      <li>Mounts a local directory to the container at runtime.</li>
+    </ul>
+  </li>
+  <li>Volumes
+    <ul>
+      <li>A part of the host file system managed by Docker (/var/lib/docker/volumes).</li>
+      <li>This is the default way that Docker stores data.</li>
+    </ul>
+  </li>
+  <li>Bind mounts
+    <ul>
+      <li>Mounts a file or directory from anywhere on the host machine into the container.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="3-demo">3. Demo</h1>
+
+<h2 id="31-docker-run--v">3.1 docker run -v</h2>
+
+<p>First, let’s create a directory on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir /opt/www
+</code></pre></div></div>
+
+<p>Second, create an index.html inside it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim index.html
+-------------
+This is the local volume of nginx docker container!
+</code></pre></div></div>
+
+<p>Next, start a container based on Nginx image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run --name=nginx-volume -d -v /opt/www:/usr/share/nginx/html nginx
+docker ps
+----------------
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+b22f4de7018f   nginx     "/docker-entrypoint.…"   3 seconds ago   Up 2 seconds   80/tcp    nginx-volume
+</code></pre></div></div>
+
+<p>Then, check the ip address of the container:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ispect b22 | grep IPAddress
+----------------------
+"IPAddress": "172.17.0.2",
+</code></pre></div></div>
+
+<p>Use <code class="language-plaintext highlighter-rouge">curl</code> to get the index page on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.2
+------------------
+This is the local volume of nginx docker container!
+</code></pre></div></div>
+
+<p>Let’s try to change the content of the index file locally?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /opt/www/index.html
+-------------------
+Index file changed for nginx-volume!
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">curl</code> again:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.2
+------------------
+Index file changed for nginx-volume!
+</code></pre></div></div>
+
+<p>What if we change the index file in the container? what will happen to the local file ?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd ~
+
+vim index.html
+-----------------
+Copy an index file from local to container, and check local file.
+
+docker cp index.html nginx-volume:/usr/share/nginx/html/index.html
+----------------
+Successfully copied 2.05kB to nginx-volume:/usr/share/nginx/html/index.html
+
+curl 172.17.0.2
+----------------
+Copy an index file from local to container, and check local file.
+
+cat /opt/www/index.html
+-----------------
+Copy an index file from local to container, and check local file.
+</code></pre></div></div>
+
+<p>Oh! The local file was changed to the one in container.</p>
+
+<p><strong>Note:</strong> If the directory under ‘-v’ option does not exist, it will be automatically created.</p>
+
+<h2 id="32-volumes">3.2 Volumes</h2>
+
+<h3 id="321-create-a-volume">3.2.1 Create a volume</h3>
+
+<p>Create a volume named ‘nginx-vol’:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume create nginx-vol
+------------------
+nginx-vol
+</code></pre></div></div>
+
+<p>All the volumes are under <code class="language-plaintext highlighter-rouge">/var/lib/docker/volumes</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /var/lib/docker/volumes
+-------------------
+backingFsBlockDev  metadata.db  nginx-vol
+</code></pre></div></div>
+
+<p>Or check created volumes using:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume ls
+-----------------
+DRIVER    VOLUME NAME
+local     nginx-vol
+</code></pre></div></div>
+
+<p>It also provides <code class="language-plaintext highlighter-rouge">inspect</code> option:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume inspect nginx-vol
+----------------------
+[
+    {
+        "CreatedAt": "2023-04-29T20:21:44+01:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/nginx-vol/_data",
+        "Name": "nginx-vol",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+</code></pre></div></div>
+
+<h3 id="322-use-volume">3.2.2 Use volume</h3>
+
+<p>Let’s start another nginx container using the volume we created just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name=nginx-volume2 --mount src=nginx-vol,dst=/usr/share/nginx/html nginx
+</code></pre></div></div>
+
+<p>or</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name-nginx-volume2 -v nginx-vol:/usr/share/nginx/html/ nginx
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ps
+----------------------
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
+d7fdfbc43579   nginx     "/docker-entrypoint.…"   3 seconds ago    Up 2 seconds    80/tcp    nginx-volume2
+</code></pre></div></div>
+
+<p>Check the volume directory on host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /var/lib/docker/volumes/nginx-vol/_data/
+----------------------
+50x.html  index.html
+</code></pre></div></div>
+
+<p>Check the index file on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat /var/lib/docker/volumes/nginx-vol/_data/index.html
+-------------------
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+&lt;style&gt;
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Welcome to nginx!&lt;/h1&gt;
+&lt;p&gt;If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.&lt;/p&gt;
+
+&lt;p&gt;For online documentation and support please refer to
+&lt;a href="http://nginx.org/"&gt;nginx.org&lt;/a&gt;.&lt;br/&gt;
+Commercial support is available at
+&lt;a href="http://nginx.com/"&gt;nginx.com&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Thank you for using nginx.&lt;/em&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>If we change the index on the host, what will we get from container’s localhost?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "🥹" &gt; /var/lib/docker/volumes/nginx-vol/_data/index.html
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.3
+---------------------------
+🥹
+</code></pre></div></div>
+
+<p>This is what we expected :)</p>
+
+<h2 id="33-bind-mounts">3.3 bind mounts</h2>
+
+<p>bind mounts allows us to bind a point wherever we want on the host machine.</p>
+
+<p>Also, create a dicrectory first:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir /opt/bind_mounts
+</code></pre></div></div>
+
+<p>Start another container:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name=nginx-bind-mounts --mount type=bind,src=/opt/bind_mounts,dst=/usr/share/nginx/html nginx
+</code></pre></div></div>
+
+<p>Create an html file in it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "🤨" &gt; /opt/bind_mounts/index.html
+</code></pre></div></div>
+
+<p>Access the container on host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.4
+---------------------
+🤨
+</code></pre></div></div>
+
+<p>This chapter is easy!</p>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Introduction]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_data.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_data.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Deep analysis of Docker networking, achieving cross-host communication between containers using etcd+flannel</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/26/deep-analysis-of-docker-networking,-achieving-cross-host-communication-between-containers-using-etcd+flannel.html" rel="alternate" type="text/html" title="Deep analysis of Docker networking, achieving cross-host communication between containers using etcd+flannel" /><published>2023-04-26T00:00:00+01:00</published><updated>2023-04-26T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/26/deep-analysis-of-docker-networking,-achieving-cross-host-communication-between-containers-using-etcd+flannel</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/26/deep-analysis-of-docker-networking,-achieving-cross-host-communication-between-containers-using-etcd+flannel.html"><![CDATA[<h1 id="1-default-docker-container-network-model">1. Default Docker Container Network Model</h1>
+
+<h2 id="11-diagram">1.1 Diagram</h2>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-26-12-57-28.jpg" id="blog-image" />
+</p>
+
+<h2 id="12-concepts">1.2 Concepts</h2>
+
+<ul>
+  <li>docker0
+    <ul>
+      <li>It is a Layer2 (OSI model) network device, a bridge</li>
+      <li>By using a bridge, different ports that are supported by Linux can be connected together.</li>
+      <li>To achieve multi-to-multi communication similar to a switch, you can use a bridge network in Docker.</li>
+    </ul>
+  </li>
+  <li>veth pair
+    <ul>
+      <li>It is a virtual ethernet device</li>
+      <li>Appear in pairs, used to solve isolation between network namespaces.</li>
+      <li>One end connected to Container network namespace, the other connected to the host network namespace</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="2-how-does-the-default-network-model-of-docker-containers-work">2. How does the default network model of Docker containers work?</h1>
+
+<h2 id="21-from-container-to-other-networks">2.1 From container to other networks</h2>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-26-12-58-14.jpg" id="blog-image" /></p>
+
+<p>Let’s run a container first:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name=app1 -p 9000:80 nginx:latest
+</code></pre></div></div>
+
+<p>On the host ubuntu machine, check the iptables:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iptables -t nat -vnL POSTROUTING
+------------------
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+  212 14431 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0
+    0     0 MASQUERADE  tcp  --  *      *       172.17.0.2           172.17.0.2           tcp dpt:80
+</code></pre></div></div>
+
+<h2 id="22-from-other-networks-to-container">2.2 From other networks to container</h2>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-26-12-58-41.jpg" id="blog-image" /></p>
+
+<p>We now have a container running with its port 80 exposed, also a portforward from host 9000 to it, let’s check out the iptables on host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iptables -t nat -vnL DOCKER
+------------
+Chain DOCKER (2 references)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0
+    0     0 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:9000 to:172.17.0.2:80
+</code></pre></div></div>
+
+<h1 id="3-four-types-of-docker-networks">3. Four types of Docker networks</h1>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-26-13-0-14.jpg" id="blog-image" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Usage</th>
+      <th>Explanation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>bridge [Bridge network]</td>
+      <td><code class="language-plaintext highlighter-rouge">--network bridge</code></td>
+      <td>Bridged containers have a private interface connected to the Docker bridge virtual interface, which is then connected to the physical network interface of the host machine through a logical host interface. A bridge network is assigned an IP address range by default, which is 172.17.0.0/16. If no network model is specified when creating a container, the default bridge network is used. This is why the IP addresses of containers created without specifying a network model are in the 172.17.0.0/16 subnet.</td>
+    </tr>
+    <tr>
+      <td>host [Host network]</td>
+      <td><code class="language-plaintext highlighter-rouge">--network host</code></td>
+      <td>More open than a bridged network, a host network allows a container to directly share the host machine’s network namespace. Therefore, the container can see as many network interfaces as the host machine has physical network interfaces. We can say that an open container is derived from a bridged network.</td>
+    </tr>
+    <tr>
+      <td>none [No network]</td>
+      <td><code class="language-plaintext highlighter-rouge">--network none</code></td>
+      <td>A closed container with only the loopback interface and cannot communicate with the outside world.</td>
+    </tr>
+    <tr>
+      <td>container [Joined container A | Joined container B] [Joined network]</td>
+      <td><code class="language-plaintext highlighter-rouge">--network container:&lt;name or ID&gt;</code></td>
+      <td>Each container has its own mount, PID, and user namespaces, but shares the same UTS, network, and IPC namespaces. As their network is shared, they can communicate via the loopback interface. They also have a private interface connected to the Docker bridge virtual interface, which is then connected to the physical network interface of the host machine through a logical host interface.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="4-application-and-examples-of-docker-network">4. Application and examples of Docker network</h1>
+
+<h2 id="41-check-current-network-types">4.1 Check current network types</h2>
+
+<p>Check current network types in brief:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network ls
+------------
+NETWORK ID     NAME      DRIVER    SCOPE
+0b4cf0e87225   bridge    bridge    local
+6249aa42ee72   host      host      local
+6bf470240b3b   none      null      local
+</code></pre></div></div>
+
+<p>Inspect network types:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network inspect bridge
+----------------
+[
+    {
+        "Name": "bridge",
+        "Id": "0b4cf0e87225ac0a6f6381bdfb57fa3bb87c54ae93497a0b1d73a7b1dd6418ac",
+        "Created": "2023-04-20T15:40:47.687436042+01:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16",
+                    "Gateway": "172.17.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "511752d687f722c87f873245ab51e41eef0e8f56ad78d88f3b10ca7fafc7d0df": {
+                "Name": "app1",
+                "EndpointID": "2b6d753792716e3b251eca087545751d3bf8c59a16f7f150c479f32184ec28fd",
+                "MacAddress": "02:42:ac:11:00:02",
+                "IPv4Address": "172.17.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {
+            "com.docker.network.bridge.default_bridge": "true",
+            "com.docker.network.bridge.enable_icc": "true",
+            "com.docker.network.bridge.enable_ip_masquerade": "true",
+            "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+            "com.docker.network.bridge.name": "docker0",
+            "com.docker.network.driver.mtu": "1500"
+        },
+        "Labels": {}
+    }
+]
+</code></pre></div></div>
+
+<p>Check supported network types by Docker:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker info | grep Network
+-----------
+  Network: bridge host ipvlan macvlan null overlay
+</code></pre></div></div>
+
+<h2 id="42-create-specified-network-types">4.2 Create specified network types</h2>
+
+<h3 id="421-bridge">4.2.1 bridge</h3>
+
+<p>Check manual page:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network create --help
+</code></pre></div></div>
+
+<p>Let’s create a bridge network using name ‘mybridge0’</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network create -d bridge --subnet "192.168.100.0/24" --gateway "192.168.100.1" -o com.docker.network.bridge.name=docker1 mybridge0
+-----------------------
+a928733f54ff9d886f97eea8e2e3af024ee354860aa3b53ce478e5bdb015e2b9
+</code></pre></div></div>
+
+<p>Check the network we created just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network ls
+--------------------
+NETWORK ID     NAME        DRIVER    SCOPE
+0b4cf0e87225   bridge      bridge    local
+6249aa42ee72   host        host      local
+a928733f54ff   mybridge0   bridge    local
+6bf470240b3b   none        null      local
+</code></pre></div></div>
+
+<p>Then check bridge on our host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ip a s
+--------------------
+82: docker1: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN group default
+    link/ether 02:42:c0:2c:a1:2d brd ff:ff:ff:ff:ff:ff
+    inet 192.168.100.1/24 brd 192.168.100.255 scope global docker1
+       valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<p>Next, let’s start a container and connect it to the network we created just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --network mybridge0 --rm busybox
+--------------------------
+/ # ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:C0:A8:64:02
+          inet addr:192.168.100.2  Bcast:192.168.100.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:12 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1112 (1.0 KiB)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+/ # exit
+</code></pre></div></div>
+
+<p>As we can see, the eth0 address of this container is what we configured in <code class="language-plaintext highlighter-rouge">mybridge0</code> just now!</p>
+
+<h3 id="422-host">4.2.2 host</h3>
+
+<p>Inspect host type:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network inspect host
+--------------------
+[
+    {
+        "Name": "host",
+        "Id": "6249aa42ee7246a026a5df16cc1e56b6f81bb398429315723f825dce21e92e48",
+        "Created": "2023-04-19T16:36:33.457196045+01:00",
+        "Scope": "local",
+        "Driver": "host",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": []
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+</code></pre></div></div>
+
+<p>Let’s create another busybox using <code class="language-plaintext highlighter-rouge">host</code> network type:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --network host --rm busybox
+--------------------------
+/ # ifconfig
+docker0   Link encap:Ethernet  HWaddr 02:42:7F:3F:7F:31
+          inet addr:172.17.0.1  Bcast:172.17.255.255  Mask:255.255.0.0
+          inet6 addr: fe80::42:7fff:fe3f:7f31/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:19069 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:21837 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1049180 (1.0 MiB)  TX bytes:374936966 (357.5 MiB)
+
+docker1   Link encap:Ethernet  HWaddr 02:42:C0:2C:A1:2D
+          inet addr:192.168.100.1  Bcast:192.168.100.255  Mask:255.255.255.0
+          inet6 addr: fe80::42:c0ff:fe2c:a12d/64 Scope:Link
+          UP BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:5 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:526 (526.0 B)
+
+eth0      Link encap:Ethernet  HWaddr EA:B7:35:7B:CD:09
+          inet addr:100.115.93.74  Bcast:100.115.93.255  Mask:255.255.255.0
+          inet6 addr: fe80::e8b7:35ff:fe7b:cd09/64 Scope:Link
+          inet6 addr: fd00:30:31:0:e8b7:35ff:fe7b:cd09/64 Scope:Global
+          UP BROADCAST RUNNING MULTICAST  MTU:65520  Metric:1
+          RX packets:41712 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:31185 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:908781796 (866.6 MiB)  TX bytes:2351185 (2.2 MiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:40 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:40 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:4080 (3.9 KiB)  TX bytes:4080 (3.9 KiB)
+
+vethf40e041 Link encap:Ethernet  HWaddr 56:95:0B:9D:EC:F8
+          inet6 addr: fe80::5495:bff:fe9d:ecf8/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:18 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:1436 (1.4 KiB)
+
+/ #exit
+</code></pre></div></div>
+
+<p>Wow, this information is exact the same as our host machine.</p>
+
+<p><strong>Hint</strong>: you can also run an Nginx container that uses host type, then go to http://localhost on your host machine to verify this.</p>
+
+<h3 id="423-none">4.2.3 none</h3>
+
+<p>Inspect none type:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker network inspect none
+-------------------------
+[
+    {
+        "Name": "none",
+        "Id": "6bf470240b3bd3b99c08fd06e5e06e97bde830e23e1a97ffe89a5c6ea0b8b118",
+        "Created": "2023-04-19T16:36:33.450201607+01:00",
+        "Scope": "local",
+        "Driver": "null",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": []
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+</code></pre></div></div>
+
+<p>Let’s test this type of network using busybox container:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --network none --rm busybox
+-------------------------
+/ # ifconfig
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ # exit
+</code></pre></div></div>
+
+<p>It only has loopback address, nothing more!</p>
+
+<h3 id="424-shared-networks">4.2.4 Shared networks</h3>
+
+<p>Firstly, create a container that uses the default network type <code class="language-plaintext highlighter-rouge">bridge</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --name c1 --rm busybox
+---------------------
+/ # ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:03
+          inet addr:172.17.0.3  Bcast:172.17.255.255  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:6 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:516 (516.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ # exit
+</code></pre></div></div>
+
+<p>Then create another contianer who will share the same network with c1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --name c2 --network container:c1 --rm busybox
+----------------------
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:03
+          inet addr:172.17.0.3  Bcast:172.17.255.255  Mask:255.255.0.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:8 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:656 (656.0 B)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ # exit
+</code></pre></div></div>
+
+<p>Did you see? They have the same network address!
+Let’s verify this by starting an httpd service in c2 and access it via c1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/ # echo "hello " &gt;&gt; /tmp/index.html
+/ # ls /tmp
+------------
+index.html
+/ # httpd -h /tmp
+/ # netstat -nlp (check port 80 status here)
+------------
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 :::80                   :::*                    LISTEN      16/httpd
+Active UNIX domain sockets (only servers)
+Proto RefCnt Flags       Type       State         I-Node PID/Program name    Path
+</code></pre></div></div>
+
+<p>Go back to c1, visit localhost:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/ # wget localhost
+-----------------
+Connecting to localhost (127.0.0.1:80)
+saving to 'index.html'
+index.html           100% |********************************************************************************************************************************|    40  0:00:00 ETA
+'index.html' saved
+
+/ # cat index.html
+-------------------------
+I am verifying docker shared network...
+</code></pre></div></div>
+
+<p>Cool, we get it from c1!</p>
+
+<p>Finally, let’s check if they will share the file system in c1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/ # cd /tmp/
+/tmp # ls
+/tmp #
+</code></pre></div></div>
+
+<p>Nothing under /tmp on c1, so they are only sharing the network.</p>
+
+<h1 id="5-implementing-communication-between-docker-containers-across-multiple-hosts">5. Implementing communication between Docker containers across multiple hosts</h1>
+
+<h2 id="51-the-need-for-communication-between-docker-containers-across-multiple-hosts">5.1 The need for communication between Docker containers across multiple hosts</h2>
+
+<ul>
+  <li>Since the environment in which Docker containers run is similar to running services on a LAN, they cannot be accessed directly from outside. If port mapping is used on the Docker host, it can lead to serious consumption of ports.</li>
+  <li>This allows for easy access to services provided by containers running on different Docker hosts.</li>
+</ul>
+
+<h2 id="52-solution-for-implementing-communication-between-containers-across-docker-hosts">5.2 Solution for implementing communication between containers across Docker Hosts</h2>
+
+<h3 id="521-docker-native-solutions">5.2.1 Docker Native Solutions</h3>
+
+<ul>
+  <li>overlay
+    <ul>
+      <li>Docker native overlay network based on VXLAN encapsulation</li>
+    </ul>
+  </li>
+  <li>macvlan
+    <ul>
+      <li>Docker host NIC interface is logically divided into multiple sub-interfaces, each sub-interface identifies a VLAN, and the container interface is directly connected to the Docker Host</li>
+    </ul>
+  </li>
+  <li>NIC interface
+    <ul>
+      <li>Forwarding to another Docker Host via routing policy</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="522-third-party-programs">5.2.2 Third party programs</h3>
+
+<h4 id="5221-tunnel-solutions">5.2.2.1 Tunnel Solutions</h4>
+
+<ul>
+  <li>Flannel
+    <ul>
+      <li>Supports UDP and VLAN encapsulated transport</li>
+    </ul>
+  </li>
+  <li>Weave
+    <ul>
+      <li>UDP and VXLAN support</li>
+    </ul>
+  </li>
+  <li>OpenvSwitch
+    <ul>
+      <li>VXLAN and GRE protocol support</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="5222-routing-solutions">5.2.2.2 Routing Solutions</h4>
+
+<ul>
+  <li>
+    <p>Calico</p>
+
+    <ul>
+      <li>Supports BGP protocol and IPIP tunneling</li>
+      <li>Each host acts as a virtual route for communication between different host containers via the BGP protocol.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="53-flannel">5.3 Flannel</h2>
+
+<h3 id="531-introduction-to-overlay-network">5.3.1 Introduction to overlay network</h3>
+
+<p>Overlay networking is a new data format that encapsulates Layer 2 messages on top of IP messages through some agreed communication protocol without changing the existing network infrastructure. This not only makes full use of the proven IP routing protocol process data distribution; but also the use of extended isolated identification bits in Overlay technology enables the support of up to 16M users beyond the 4000 number limit of VLANs and allows broadcast traffic to be converted into multicast traffic when necessary to avoid broadcast data flooding.</p>
+
+<p>As a result, Overlay networks are in fact the most dominant solution for container cross-node data transmission and routing today.</p>
+
+<h3 id="532-introduction-to-flannel">5.3.2 Introduction to Flannel</h3>
+
+<p>Flannel is an overlay network tool designed by the CoreOS team for Kubernetes to help every CoreOS host using Kuberentes have a full subnet. Flannel provides a virtual network for containers by assigning a subnet to each host. It is based on Linux TUN/TAP and uses UDP to encapsulate IP packets to create the overlay network and maintain the distribution of the network with the help of etcd. Flannel is a simple and easy way to configure a layer 3 network fabric designed for Kubernetes.</p>
+
+<h3 id="533-how-flannel-works">5.3.3 How Flannel Works</h3>
+
+<p>Flannel is a network planning service designed by the CoreOS team for Kubernetes. Simply put, it allows Docker containers created by different node hosts in a cluster to have a cluster-wide unique virtual IP address. In the default Docker configuration, each Node’s Docker service is responsible for assigning IP addresses to the containers on that Node, but containers within a Node can access each other, but across a network of hosts (Nodes) they cannot communicate with each other. containers on different nodes can obtain “same intranet” and “non-duplicate” IP addresses, and allow containers on different nodes to communicate directly over the intranet IP. Flannel uses etcd to store configuration data and subnet assignment information. flannel starts up with a background process that first retrieves the configuration and list of subnets in use, then selects an available subnet and attempts to register it. etcd also stores the corresponding ip of each host. flannel uses the watch mechanism of etcd to monitor <code class="language-plaintext highlighter-rouge">/coreos.com/network/subnets</code> and maintains a routing table based on it. To improve performance, flannel has optimised the Universal TAP/TUN device to proxy the ip slicing between TUN and UDP. The following schematic illustrates this:</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-26-13-1-10.jpg" id="blog-image" /></p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. After the data is sent from the source container, it is forwarded via the docker0 virtual NIC on the host to the flannel0 virtual NIC, which is a P2P virtual NIC with the flanneld service listening on the other end of the NIC.
+2. Flannel maintains an inter-node routing table via the Etcd service, which holds the subnet segment information for each node host.
+3. The flanneld service of the source host encapsulates the original data content in UDP and delivers it to the flanneld service of the destination node according to its own routing table, where the data is unpackaged and then goes directly to the flannel0 virtual NIC of the destination node and then is forwarded to the docker0 virtual NIC of the destination host, and finally is routed by docker0 is routed to the destination container, just like local container communication.
+</code></pre></div></div>
+
+<h2 id="54-etcd">5.4 ETCD</h2>
+
+<p>etcd is an open source project launched by the CoreOS team in June 2013, its goal is to build a highly available distributed key-value (key-value) database. etcd internally uses the <code class="language-plaintext highlighter-rouge">raft</code> protocol as the consistency algorithm, and etcd is implemented in the Go language.</p>
+
+<p>etcd is used as a service discovery system and is characterised by:</p>
+
+<ul>
+  <li>Simple: easy to install and configure, and provides an HTTP API for interaction, which is also simple to use</li>
+  <li>Secure: supports SSL certificate validation</li>
+  <li>Fast: according to the official benchmark data, a single instance supports 2k+ reads per second</li>
+  <li>Reliable: draft algorithm for data availability and consistency in distributed systems</li>
+</ul>
+
+<h2 id="55-etcd-deployment">5.5 ETCD Deployment</h2>
+
+<p>Here we will use two Fedora Linux machines named with ‘node-01’ and ‘node-02’, both the host firewall and SELINUX should be turned off.</p>
+
+<h3 id="550-turn-off-firewall-and-selinux">5.5.0 Turn off firewall and selinux</h3>
+
+<p>Check firewall status:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl status firewalld
+---------------------
+○ firewalld.service - firewalld - dynamic firewall daemon
+     Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; preset: enabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: inactive (dead)
+       Docs: man:firewalld(1)
+</code></pre></div></div>
+
+<p>If firewall is running on your machine, just run these:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl stop firewalld
+systemctl disable firewalld
+</code></pre></div></div>
+
+<p>Check selinux:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sestatus
+-------------------
+SELinux status:                 disabled
+</code></pre></div></div>
+
+<p>If your SELinux status is active, do this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/selinux/config
+--------------------------
+SELINUX=disabled
+</code></pre></div></div>
+
+<p>Finally, don’t forget to reboot!</p>
+
+<h3 id="551-configure-hostnames">5.5.1 Configure hostnames</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hostnamectl set-hostname node1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hostnamectl set-hostname node2
+</code></pre></div></div>
+
+<h3 id="552-configure-host-ip-addresses">5.5.2 Configure host ip addresses</h3>
+
+<p>As I already have ip addresses for both of my machine, so check them with:</p>
+
+<p>(node-01)</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ifconfig
+----------------
+enp0s5: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.211.55.10  netmask 255.255.255.0  broadcast 10.211.55.255
+        inet6 fe80::21c:42ff:fe95:201e  prefixlen 64  scopeid 0x20&lt;link&gt;
+        inet6 fdb2:2c26:f4e4:0:21c:42ff:fe95:201e  prefixlen 64  scopeid 0x0&lt;global&gt;
+        ether 00:1c:42:95:20:1e  txqueuelen 1000  (Ethernet)
+        RX packets 12647  bytes 16599159 (15.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 3226  bytes 284194 (277.5 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 17  bytes 1008 (1008.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 17  bytes 1008 (1008.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<p>(node-02)</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enp0s5: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.211.55.11  netmask 255.255.255.0  broadcast 10.211.55.255
+        inet6 fdb2:2c26:f4e4:0:21c:42ff:fede:7aea  prefixlen 64  scopeid 0x0&lt;global&gt;
+        inet6 fe80::21c:42ff:fede:7aea  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether 00:1c:42:de:7a:ea  txqueuelen 1000  (Ethernet)
+        RX packets 12030  bytes 16672288 (15.8 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 2528  bytes 190407 (185.9 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 17  bytes 1008 (1008.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 17  bytes 1008 (1008.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<p>If there is no ip address on your virtual machine, you can add one via:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/sysconfig/network-scripts/ifcfg-[interface-name]
+---------------------------
+IPADDR=[ip-address]
+NETMASK=[netmask]
+GATEWAY=[gateway-address]
+---------------------------
+systemctl restart network
+</code></pre></div></div>
+
+<h3 id="553-hostname-and-ip-address-resolution">5.5.3 Hostname and IP address resolution</h3>
+
+<p>For node1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/hosts
+-------------------------
+# Loopback entries; do not change.
+# For historical reasons, localhost precedes localhost.localdomain:
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+# See hosts(5) for proper format and other examples:
+10.211.55.10 node1
+10.211.55.11 node2
+</code></pre></div></div>
+
+<p>For node2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/hosts
+-------------------------
+# Loopback entries; do not change.
+# For historical reasons, localhost precedes localhost.localdomain:
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+# See hosts(5) for proper format and other examples:
+10.211.55.10 node1
+10.211.55.11 node2
+</code></pre></div></div>
+
+<h3 id="554-turn-on-forward">5.5.4 Turn on forward</h3>
+
+<p>For both machines, enable ipv4 ip_forward:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/sysctl.conf
+--------------------
+net.ipv4.ip_forward=1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sysctl -p
+--------------
+net.ipv4.ip_forward = 1
+</code></pre></div></div>
+
+<p>Finally, we need verify if they can communicate with each other by pinging each other.</p>
+
+<h3 id="555-etcd-installation">5.5.5 etcd Installation</h3>
+
+<p>Same, install this on both:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yum update -y
+yum install etcd -y
+systemctl status etcd
+-----------------------
+○ etcd.service - Etcd Server
+     Loaded: loaded (/usr/lib/systemd/system/etcd.service; disabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: inactive (dead)
+</code></pre></div></div>
+
+<p>Now, etcd has been installed, we need to change configurations!</p>
+
+<h3 id="556-etcd-configuration">5.5.6 etcd Configuration</h3>
+
+<p>On node-01, change the config file into this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/etcd/etcd.conf
+----------------------------
+# [member]
+ETCD_NAME="node1"
+ETCD_DATA_DIR="/var/lib/etcd/node1.etcd"
+#ETCD_WAL_DIR=""
+#ETCD_SNAPSHOT_COUNT="10000"
+#ETCD_HEARTBEAT_INTERVAL="100"
+#ETCD_ELECTION_TIMEOUT="1000"
+ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379, http://0.0.0.0:4001"
+#ETCD_MAX_SNAPSHOTS="5"
+#ETCD_MAX_WALS="5"
+#ETCD_CORS=""
+#
+#[cluster]
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://10.211.55.10:2380"
+# if you use different ETCD_NAME (e.g. test), set ETCD_INITIAL_CLUSTER value for this name, i.e. "test=http://..."
+ETCD_INITIAL_CLUSTER="node1=http://10.211.55.10:2380, node2=http://10.211.55.11:2380"
+#ETCD_INITIAL_CLUSTER_STATE="new"
+#ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_ADVERTISE_CLIENT_URLS="http://10.211.55.10:2379, http://10.211.55.10:4001"
+#ETCD_DISCOVERY=""
+#ETCD_DISCOVERY_SRV=""
+#ETCD_DISCOVERY_FALLBACK="proxy"
+#ETCD_DISCOVERY_PROXY=""
+#ETCD_STRICT_RECONFIG_CHECK="false"
+#ETCD_AUTO_COMPACTION_RETENTION="0"
+#
+#[proxy]
+#ETCD_PROXY="off"
+#ETCD_PROXY_FAILURE_WAIT="5000"
+#ETCD_PROXY_REFRESH_INTERVAL="30000"
+#ETCD_PROXY_DIAL_TIMEOUT="1000"
+#ETCD_PROXY_WRITE_TIMEOUT="5000"
+#ETCD_PROXY_READ_TIMEOUT="0"
+#
+#[security]
+#ETCD_CERT_FILE=""
+#ETCD_KEY_FILE=""
+#ETCD_CLIENT_CERT_AUTH="false"
+#ETCD_TRUSTED_CA_FILE=""
+#ETCD_AUTO_TLS="false"
+#ETCD_PEER_CERT_FILE=""
+#ETCD_PEER_KEY_FILE=""
+#ETCD_PEER_CLIENT_CERT_AUTH="false"
+#ETCD_PEER_TRUSTED_CA_FILE=""
+#ETCD_PEER_AUTO_TLS="false"
+#
+#[logging]
+#ETCD_DEBUG="false"
+# examples for -log-package-levels etcdserver=WARNING,security=DEBUG
+#ETCD_LOG_PACKAGE_LEVELS=""
+</code></pre></div></div>
+
+<p>On node-02, change it to something similar:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/etcd/etcd.conf
+----------------------------
+#[member]
+ETCD_NAME="node2"
+ETCD_DATA_DIR="/var/lib/etcd/node2.etcd"
+#ETCD_WAL_DIR=""
+#ETCD_SNAPSHOT_COUNT="10000"
+#ETCD_HEARTBEAT_INTERVAL="100"
+#ETCD_ELECTION_TIMEOUT="1000"
+ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379,http://0.0.0.0:4001"
+#ETCD_MAX_SNAPSHOTS="5"
+#ETCD_MAX_WALS="5"
+#ETCD_CORS=""
+#
+#[cluster]
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://10.211.55.11:2380"
+# if you use different ETCD_NAME (e.g. test), set ETCD_INITIAL_CLUSTER value for this name, i.e. "test=http://..."
+ETCD_INITIAL_CLUSTER="node1=http://10.211.55.10:2380,node2=http://10.211.55.11:2380"
+#ETCD_INITIAL_CLUSTER_STATE="new"
+#ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_ADVERTISE_CLIENT_URLS="http://10.211.55.11:2379,http://10.211.55.11:4001"
+#ETCD_DISCOVERY=""
+#ETCD_DISCOVERY_SRV=""
+#ETCD_DISCOVERY_FALLBACK="proxy"
+#ETCD_DISCOVERY_PROXY=""
+#ETCD_STRICT_RECONFIG_CHECK="false"
+#ETCD_AUTO_COMPACTION_RETENTION="0"
+#
+#[proxy]
+#ETCD_PROXY="off"
+#ETCD_PROXY_FAILURE_WAIT="5000"
+#ETCD_PROXY_REFRESH_INTERVAL="30000"
+#ETCD_PROXY_DIAL_TIMEOUT="1000"
+#ETCD_PROXY_WRITE_TIMEOUT="5000"
+#ETCD_PROXY_READ_TIMEOUT="0"
+#
+#[security]
+#ETCD_CERT_FILE=""
+#ETCD_KEY_FILE=""
+#ETCD_CLIENT_CERT_AUTH="false"
+#ETCD_TRUSTED_CA_FILE=""
+#ETCD_AUTO_TLS="false"
+#ETCD_PEER_CERT_FILE=""
+#ETCD_PEER_KEY_FILE=""
+#ETCD_PEER_CLIENT_CERT_AUTH="false"
+#ETCD_PEER_TRUSTED_CA_FILE=""
+#ETCD_PEER_AUTO_TLS="false"
+#
+#[logging]
+#ETCD_DEBUG="false"
+# examples for -log-package-levels etcdserver=WARNING,security=DEBUG
+#ETCD_LOG_PACKAGE_LEVELS=""
+</code></pre></div></div>
+
+<h3 id="557-check-etcd-status-on-both-nodes">5.5.7 Check etcd status on both nodes</h3>
+
+<p>On node1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl status etcd
+-------------------------
+● etcd.service - Etcd Server
+     Loaded: loaded (/usr/lib/systemd/system/etcd.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: active (running) since Tue 2023-04-25 18:08:52 IST; 5min ago
+   Main PID: 1278 (etcd)
+      Tasks: 8 (limit: 2218)
+     Memory: 13.9M
+        CPU: 4.939s
+     CGroup: /system.slice/etcd.service
+             └─1278 /usr/bin/etcd
+
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.713+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.714+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.715+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.717+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.717+0100",&gt;
+Apr 25 18:08:52 node1 systemd[1]: Started etcd.service - Etcd Server.
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.718+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.720+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.720+0100",&gt;
+Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.720+0100",
+</code></pre></div></div>
+
+<p>On node2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl status etcd
+-------------------------
+● etcd.service - Etcd Server
+     Loaded: loaded (/usr/lib/systemd/system/etcd.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: active (running) since Tue 2023-04-25 18:08:52 IST; 6min ago
+   Main PID: 1081 (etcd)
+      Tasks: 8 (limit: 2218)
+     Memory: 14.9M
+        CPU: 4.265s
+     CGroup: /system.slice/etcd.service
+             └─1081 /usr/bin/etcd
+
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.716+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.716+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.717+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.717+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.718+0100","c&gt;
+Apr 25 18:08:52 node2 systemd[1]: Started etcd.service - Etcd Server.
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.722+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.722+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.724+0100","c&gt;
+Apr 25 18:08:52 node2 bash[1081]: {"level":"info","ts":"2023-04-25T18:08:52.724+0100","c&gt;
+</code></pre></div></div>
+
+<p>As etcd is using port 2380, if you have any errors/issues with starting it and set up the connection between nodes, just try to check if 2380 is opened, for example, if you want to verify the connectivity from node1 and node2, you can use the following methods:</p>
+
+<ul>
+  <li>
+    <p>use <code class="language-plaintext highlighter-rouge">telnet</code> on node1:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dnf install telnet
+telnet node2 2380
+---------------
+Trying 10.211.55.11...
+Connected to node2.
+Escape character is '^]'.
+Connection closed by foreign host.
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>use <code class="language-plaintext highlighter-rouge">nmap</code> on node1:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dnf install nmap
+nmap -p 2380 node2
+-----------------
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-04-25 18:19 IST
+Nmap scan report for node2 (10.211.55.11)
+Host is up (0.00052s latency).
+
+PORT     STATE SERVICE
+2380/tcp open  etcd-server
+MAC Address: 00:1C:42:DE:7A:EA (Parallels)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.30 seconds
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>use <code class="language-plaintext highlighter-rouge">lsof</code> on node2:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lsof -i :2380
+-------------
+COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+etcd    1081 etcd    3u  IPv6  25415      0t0  TCP *:etcd-server (LISTEN)
+etcd    1081 etcd   13u  IPv4  25419      0t0  TCP node2:39382-&gt;node1:etcd-server (ESTABLISHED)
+etcd    1081 etcd   15u  IPv4  25435      0t0  TCP node2:39392-&gt;node1:etcd-server (ESTABLISHED)
+etcd    1081 etcd   16u  IPv6  25437      0t0  TCP node2:etcd-server-&gt;node1:51804 (ESTABLISHED)
+etcd    1081 etcd   17u  IPv6  25438      0t0  TCP node2:etcd-server-&gt;node1:51806 (ESTABLISHED)
+etcd    1081 etcd   18u  IPv6  24346      0t0  TCP node2:etcd-server-&gt;node1:51814 (ESTABLISHED)
+etcd    1081 etcd   23u  IPv4  25446      0t0  TCP node2:42870-&gt;node1:etcd-server (ESTABLISHED)
+etcd    1081 etcd   24u  IPv6  24353      0t0  TCP node2:etcd-server-&gt;node1:51820 (ESTABLISHED)
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>use <code class="language-plaintext highlighter-rouge">netstat</code>:</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>netstat -tunlp | grep -E '2380|4001'
+----------------------
+tcp6       0      0 :::2380                 :::*                    LISTEN      1278/etcd
+tcp6       0      0 :::4001                 :::*                    LISTEN      1278/etcd
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h3 id="558-check-the-health-of-etcd-cluster">5.5.8 Check the health of etcd cluster</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>etcdctl endpoint health
+-----------------
+127.0.0.1:2379 is healthy: successfully committed proposal: took = 6.241474ms
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>etcdctl member list
+------------------
+95085dc63d7deee3, started, node1, http://10.211.55.10:2380, http://10.211.55.10:2379,http://10.211.55.10:4001, false
+bd93686a68a54c2d, started, node2, http://10.211.55.11:2380, http://10.211.55.11:2379,http://10.211.55.11:4001, false
+(here 'false' indicates whether it is leader)
+</code></pre></div></div>
+
+<h2 id="56-flannel-deployment">5.6 Flannel Deployment</h2>
+
+<h3 id="561-flannel-installation">5.6.1 Flannel Installation</h3>
+
+<p>This is the official releases of Flannel: https://github.com/flannel-io/flannel/releases</p>
+
+<p>As I am using Apple M1 chip (arm64 arch), I will download the arm64 tar to my virtual Fedora machines:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://github.com/flannel-io/flannel/releases/download/v0.21.4/flannel-v0.21.4-linux-arm64.tar.gz
+
+ls
+-----------
+flannel-v0.21.4-linux-arm64.tar.gz
+
+tar -xvzf flannel-v0.21.4-linux-arm64.tar.gz
+ls
+------------
+flanneld  mk-docker-opts.sh  README.md
+</code></pre></div></div>
+
+<p>Then we are going to add flannel configuration to etcd via <code class="language-plaintext highlighter-rouge">etcdctl</code>:</p>
+
+<p>For node1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>etcdctl --endpoints http://10.211.55.10:2379 put /coreos.com/network/config '{"Network": "10.0.0.0/16", "SubnetLen": 24, "SubnetMin": "10.0.1.0","SubnetMax": "10.0.20.0", "Backend": {"Type": "vxlan"}}'
+--------------
+OK
+</code></pre></div></div>
+
+<p>For node2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>etcdctl --endpoints http://10.211.55.11:2379 put /coreos.com/network/config '{"Network": "10.0.0.0/16", "SubnetLen": 24, "SubnetMin": "10.0.1.0","SubnetMax": "10.0.20.0", "Backend": {"Type": "vxlan"}}'
+--------------
+OK
+</code></pre></div></div>
+
+<h3 id="562-change-flanneld-configuration">5.6.2 Change flanneld Configuration</h3>
+
+<p>First copy the two extracted from our tar file to /usr/local/bin:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cp ~/flanneld /usr/local/bin
+cp ~/mk-docker-opts.sh /usr/local/bin
+</code></pre></div></div>
+
+<p>Then change the systemd config, for node1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/systemd/system/flanneld.service
+-------------------------
+[Unit]
+Description=Flanneld
+Documentation=https://github.com/coreos/flannel
+After=network.target
+Before=docker.service
+
+[Service]
+User=root
+ExecStartPost=/usr/local/bin/mk-docker-opts.sh
+ExecStart=/usr/local/bin/flanneld \
+--etcd-endpoints="http://10.211.55.10:2379,http://10.211.55.11:2379" \
+--iface=10.211.55.10 \
+--ip-masq=true \
+--etcd-prefix=/coreos.com/network
+Restart=on-failure
+Type=notify
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+</code></pre></div></div>
+
+<p>For node2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/systemd/system/flanneld.service
+-------------------------
+[Unit]
+Description=Flanneld
+Documentation=https://github.com/coreos/flannel
+After=network.target
+Before=docker.service
+
+[Service]
+User=root
+ExecStartPost=/usr/local/bin/mk-docker-opts.sh
+ExecStart=/usr/local/bin/flanneld \
+--etcd-endpoints="http://10.211.55.10:2379,http://10.211.55.11:2379" \
+--iface=10.211.55.11 \
+--ip-masq=true \
+--etcd-prefix=/coreos.com/network
+Restart=on-failure
+Type=notify
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+</code></pre></div></div>
+
+<p>After modifying the systemd config, we need to reload the daemon and start flanneld:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl daemon-reload
+systemctl start flanneld
+-------------------
+● flanneld.service - Flanneld
+     Loaded: loaded (/etc/systemd/system/flanneld.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: active (running) since Tue 2023-04-25 23:47:01 IST; 13s ago
+       Docs: https://github.com/coreos/flannel
+    Process: 10162 ExecStartPost=/usr/local/bin/mk-docker-opts.sh (code=exited, status=0/SUCCESS)
+   Main PID: 10129 (flanneld)
+      Tasks: 9 (limit: 2218)
+     Memory: 36.6M
+        CPU: 335ms
+     CGroup: /system.slice/flanneld.service
+             └─10129 /usr/local/bin/flanneld --etcd-endpoints=http://10.211.55.10:2379,http://10.211.55.11:2379 --iface=10.211.55.10 --ip-masq=true --etcd-prefix=/coreos.com/net&gt;
+
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.063815   10129 main.go:439] Running backend.
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.064017   10129 iptables.go:290] generated 3 rules
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.064061   10129 vxlan_network.go:64] watching for new subnet leases
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.076946   10129 registry.go:291] registry: watching subnets starting from rev 8
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.077123   10129 watch.go:51] Batch elem [0] is { subnet.Event{Type:0, Lease:subnet.Lease{EnableIPv4:true, EnableIPv6:false, &gt;
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.080774   10129 local_manager.go:313] manager.WatchLease: sending reset results...
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.080815   10129 local_manager.go:390] Waiting for 22h59m58.99995396s to renew lease
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.102726   10129 iptables.go:283] bootstrap done
+Apr 25 23:47:01 node1 flanneld[10129]: I0425 23:47:01.126716   10129 iptables.go:283] bootstrap done
+Apr 25 23:47:01 node1 systemd[1]: Started flanneld.service - Flanneld.
+</code></pre></div></div>
+
+<p>Perfect!</p>
+
+<h3 id="563-view-the-configuration-information-generated-by-flannel-on-each-node">5.6.3 View the configuration information generated by Flannel on each node</h3>
+
+<ul>
+  <li>Node1:</li>
+</ul>
+
+<p>The config generated by flannel can be found here:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /run/flannel/
+---------------
+subnet.env
+
+cat /run/flannel/subnet.env
+---------------
+FLANNEL_NETWORK=10.0.0.0/16
+FLANNEL_SUBNET=10.0.13.1/24
+FLANNEL_MTU=1450
+FLANNEL_IPMASQ=true
+</code></pre></div></div>
+
+<p>Using <code class="language-plaintext highlighter-rouge">ifconfig</code> we can see that a network on the host machine named with ‘flannel.1’ has been created:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ifconfig
+---------------
+docker0: flags=4099&lt;UP,BROADCAST,MULTICAST&gt;  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        inet6 fe80::42:a1ff:fe08:e168  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether 02:42:a1:08:e1:68  txqueuelen 0  (Ethernet)
+        RX packets 8309  bytes 348610 (340.4 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 50196  bytes 73261483 (69.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+enp0s5: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.211.55.10  netmask 255.255.255.0  broadcast 10.211.55.255
+        inet6 fe80::21c:42ff:fe95:201e  prefixlen 64  scopeid 0x20&lt;link&gt;
+        inet6 fdb2:2c26:f4e4:0:21c:42ff:fe95:201e  prefixlen 64  scopeid 0x0&lt;global&gt;
+        ether 00:1c:42:95:20:1e  txqueuelen 1000  (Ethernet)
+        RX packets 1257821  bytes 907345118 (865.3 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 784986  bytes 94347614 (89.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+flannel.1: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
+        inet 10.0.13.0  netmask 255.255.255.255  broadcast 0.0.0.0
+        inet6 fe80::407e:caff:fe8f:7c99  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether 42:7e:ca:8f:7c:99  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 9 overruns 0  carrier 0  collisions 0
+
+lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 9033  bytes 492352 (480.8 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 9033  bytes 492352 (480.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<ul>
+  <li>Node2:</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /run/flannel/
+--------------------
+subnet.env
+
+cat /run/flannel/subnet.env
+---------------------
+FLANNEL_NETWORK=10.0.0.0/16
+FLANNEL_SUBNET=10.0.14.1/24
+FLANNEL_MTU=1450
+FLANNEL_IPMASQ=true
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ifconfig
+------------------
+enp0s5: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 10.211.55.11  netmask 255.255.255.0  broadcast 10.211.55.255
+        inet6 fe80::21c:42ff:fede:7aea  prefixlen 64  scopeid 0x20&lt;link&gt;
+        inet6 fdb2:2c26:f4e4:0:21c:42ff:fede:7aea  prefixlen 64  scopeid 0x0&lt;global&gt;
+        ether 00:1c:42:de:7a:ea  txqueuelen 1000  (Ethernet)
+        RX packets 1330986  bytes 1038765119 (990.6 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 780934  bytes 77990387 (74.3 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+flannel.1: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
+        inet 10.0.14.0  netmask 255.255.255.255  broadcast 0.0.0.0
+        inet6 fe80::b455:9bff:fe5a:ac7c  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether b6:55:9b:5a:ac:7c  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 9 overruns 0  carrier 0  collisions 0
+
+lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 9528  bytes 500098 (488.3 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 9528  bytes 500098 (488.3 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<h2 id="57-docker-configuration">5.7 Docker Configuration</h2>
+
+<p>I will only demo using node1 here, node2 should be the same.</p>
+
+<p>Check docker env file:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat /run/docker_opts.env
+-----------------
+DOCKER_OPT_BIP="--bip=10.0.13.1/24"
+DOCKER_OPT_IPMASQ="--ip-masq=false"
+DOCKER_OPT_MTU="--mtu=1450"
+DOCKER_OPTS=" --bip=10.0.13.1/24 --ip-masq=false --mtu=1450"
+</code></pre></div></div>
+
+<p>Modify docker daemon service file:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /lib/systemd/system/docker.service
+--------------------------
+.......
+[Service]
+Type=notify
+EnvironmentFile=-/run/docker_opts.env
+# the default is not to use systemd for cgroups because the delegate issues still
+# exists and systemd currently does not support the cgroup feature set required
+# for containers run by docker
+ExecStart=/usr/bin/dockerd \
+          --host=fd:// \
+          --exec-opt native.cgroupdriver=systemd \
+          $DOCKER_OPTS
+</code></pre></div></div>
+
+<p>Reload daemon and restart docker:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl daemon-reload
+systemctl restart docker
+</code></pre></div></div>
+
+<p>Check ip address of docker and flannel:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ifconfig
+--------------------
+docker0: flags=4099&lt;UP,BROADCAST,MULTICAST&gt;  mtu 1500
+        inet 10.0.13.1  netmask 255.255.255.0  broadcast 10.0.13.255
+        inet6 fe80::42:a1ff:fe08:e168  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether 02:42:a1:08:e1:68  txqueuelen 0  (Ethernet)
+        RX packets 8309  bytes 348610 (340.4 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 50196  bytes 73261483 (69.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+flannel.1: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
+        inet 10.0.13.0  netmask 255.255.255.255  broadcast 0.0.0.0
+        inet6 fe80::407e:caff:fe8f:7c99  prefixlen 64  scopeid 0x20&lt;link&gt;
+        ether 42:7e:ca:8f:7c:99  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 9 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<p>Cool, docker now joined flannel’s network!</p>
+
+<h2 id="58-verify-the-connectivity-between-docker-containers-on-two-hosts">5.8 Verify the connectivity between docker containers on two hosts</h2>
+
+<p>Finally, let’s run docker containers on two different hosts (node1 and node2), check if they can communicate with each other via etcd and flannel.</p>
+
+<p>On node1:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --name=busybox-node1 busybox
+-----------------
+/ # ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:0A:00:0D:02
+          inet addr:10.0.13.2  Bcast:10.0.13.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1450  Metric:1
+          RX packets:13 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1154 (1.1 KiB)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ # ping 10.0.14.2
+--------------------------
+PING 10.0.14.2 (10.0.14.2): 56 data bytes
+64 bytes from 10.0.14.2: seq=0 ttl=62 time=3.128 ms
+64 bytes from 10.0.14.2: seq=1 ttl=62 time=1.523 ms
+64 bytes from 10.0.14.2: seq=2 ttl=62 time=1.359 ms
+</code></pre></div></div>
+
+<p>On node2:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it --name=busybox-node2 busybox
+-------------------
+/ # ifconfig
+eth0      Link encap:Ethernet  HWaddr 02:42:0A:00:0E:02
+          inet addr:10.0.14.2  Bcast:10.0.14.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1450  Metric:1
+          RX packets:19 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1690 (1.6 KiB)  TX bytes:0 (0.0 B)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+/ # ping 10.0.13.2
+PING 10.0.13.2 (10.0.13.2): 56 data bytes
+64 bytes from 10.0.13.2: seq=0 ttl=62 time=0.805 ms
+64 bytes from 10.0.13.2: seq=1 ttl=62 time=1.293 ms
+64 bytes from 10.0.13.2: seq=2 ttl=62 time=1.117 ms
+</code></pre></div></div>
+
+<p>Well done! We can see that the newly created docker container will join the flannel network, we have achieved cross-host communication between Docker containers! 🥳</p>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Default Docker Container Network Model]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_network.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_network.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Comprehensive explanation of Dockerfile and novel container image construction techniques</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/22/comprehensive-explanation-of-dockerfile-and-novel-container-image-construction-techniques.html" rel="alternate" type="text/html" title="Comprehensive explanation of Dockerfile and novel container image construction techniques" /><published>2023-04-22T00:00:00+01:00</published><updated>2023-04-22T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/22/comprehensive-explanation-of-dockerfile-and-novel-container-image-construction-techniques</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/22/comprehensive-explanation-of-dockerfile-and-novel-container-image-construction-techniques.html"><![CDATA[<h1 id="1-the-relationship-between-container-and-image">1. The relationship between container and image</h1>
+
+<p>Speaking of containers managed by Docker, we have to mention container images because they serve as the templates for containers. It is through container images that we can quickly create containers.</p>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-22-12-29-36.jpg" id="blog-image" />
+</p>
+
+<blockquote>
+  <p>Docker Daemon creates containers using images</p>
+</blockquote>
+
+<h1 id="2-classification-of-images">2. Classification of images</h1>
+
+<ul>
+  <li>OS
+    <ul>
+      <li>CentOS</li>
+      <li>Ubuntu</li>
+    </ul>
+  </li>
+  <li>Application
+    <ul>
+      <li>Tomcat</li>
+      <li>Nginx</li>
+      <li>MySQL</li>
+      <li>Redis</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="3-how-to-get-images">3. How to get images?</h1>
+
+<ol>
+  <li>
+    <p>From DockerHub</p>
+  </li>
+  <li>
+    <p>Make the system-related files in an OS into image</p>
+  </li>
+  <li>
+    <p>Using docker commit to make a running container into a new image</p>
+  </li>
+  <li>
+    <p>Use Dockerfile to build an image</p>
+  </li>
+</ol>
+
+<h1 id="4-a-demo-using-method-3--4-above">4. A demo using method 3 &amp; 4 above</h1>
+
+<h2 id="41-make-a-running-container-into-an-image">4.1 Make a running container into an image</h2>
+
+<h3 id="411-run-a-container-firstly">4.1.1 Run a container firstly</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it ubuntu
+</code></pre></div></div>
+
+<h3 id="412-install-an-app-in-the-container">4.1.2 Install an app in the container</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt-get update -y &amp;&amp; \
+apt-get install apache2 -y &amp;&amp; \
+apt-get install systemctl &amp;&amp; \
+systemctl enable apache2 &amp;&amp; \
+systemctl start apache2
+</code></pre></div></div>
+
+<p>Please use <code class="language-plaintext highlighter-rouge">curl localhost</code> to verify whether the apache2 http server is running.</p>
+
+<h3 id="413-make-it-into-an-image">4.1.3 Make it into an image</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@master-01:~# docker ps
+CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS         PORTS                                   NAMES
+a83d4a14e3c6   ubuntu            "/bin/bash"              30 minutes ago   Up 3 minutes                                           brave_leakey
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker commit -a "Clarence" a83d4a14e3c6 ubuntu-apache2:v1
+# sha256:dbc4bd399ef0c4e7c50425ff9de73711e121bbdf14cd960ed181ff62d90ea1bd
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@master-01:~# docker image ls
+REPOSITORY       TAG       IMAGE ID       CREATED         SIZE
+ubuntu-apache2   v1        a86e18671cbb   3 seconds ago   242MB
+</code></pre></div></div>
+
+<p>We can see that the size of the new image is bigger than the official ubuntu:latest image, that means we successfully added something into the iamge.</p>
+
+<h2 id="42-use-dockerfile">4.2 Use Dockerfile</h2>
+
+<h3 id="421-intro-to-dockerfile">4.2.1 Intro to Dockerfile</h3>
+
+<p>A Dockerfile is a script that can be interpreted by the Docker program. It is made up of a series of instructions, each with its own syntax and supported commands. When we need to specify additional requirements in a container image, we can add or modify instructions in the Dockerfile, and then use <code class="language-plaintext highlighter-rouge">docker build</code> to generate our custom container image.</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-22-12-30-40.jpg" id="blog-image" /></p>
+
+<h3 id="422-dockerfile-commands">4.2.2 Dockerfile commands</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Command</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FROM</td>
+      <td>The base image upon which the new image is built</td>
+    </tr>
+    <tr>
+      <td>LABEL</td>
+      <td>A tag</td>
+    </tr>
+    <tr>
+      <td>RUN</td>
+      <td>Shell commands executed during image build</td>
+    </tr>
+    <tr>
+      <td>COPY</td>
+      <td>Copy local file to image</td>
+    </tr>
+    <tr>
+      <td>ADD</td>
+      <td>Similar to COPY, but can auto-unzip zip files</td>
+    </tr>
+    <tr>
+      <td>ENV</td>
+      <td>Environment variables</td>
+    </tr>
+    <tr>
+      <td>USER</td>
+      <td>To specify the user to run commands for RUN, CMD and ENTRYPOINT</td>
+    </tr>
+    <tr>
+      <td>EXPOSE</td>
+      <td>To declare the service port for container runtime</td>
+    </tr>
+    <tr>
+      <td>WORKDIR</td>
+      <td>To set working directory for RUN, CMD, ENTRYPOINT, COPY and ADD</td>
+    </tr>
+    <tr>
+      <td>CMD</td>
+      <td>When running a container, the default CMD instruction is executed. If there are multiple CMD instructions, only the last one takes effect</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>(<code class="language-plaintext highlighter-rouge">man dockerfile</code> can be used to for helping)</p>
+
+<ol>
+  <li><strong>FROM</strong></li>
+</ol>
+
+<p>The FROM instruction is used to specify the base image that will be used to build a new image in Dockerfile.</p>
+
+<p>The FROM instruction must be the first line in the Dockerfile.</p>
+
+<p>The base image specified by the FROM instruction can be from the official remote repository, or it can be in the local repository, with priority given to the local repository.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: FROM &lt;image&gt;:&lt;tag&gt;
+e.g.: FROM ubuntu:latest
+</code></pre></div></div>
+
+<ol>
+  <li><strong>RUN</strong></li>
+</ol>
+
+<p>“The RUN instruction is used to execute commands during the image build process, and it has the following two formats:”</p>
+
+<ul>
+  <li>shell format</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: RUN &lt;commands&gt;
+e.g.: RUN echo 'hello world' &gt; /var/www/html/index.html
+</code></pre></div></div>
+
+<ul>
+  <li>exec format</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: RUN ["executable file", "arg1", "arg2"]
+e.g.: RUN ["/bin/bash", "-c", "echo 'hello' &gt; /var/www/html/index.html"]
+</code></pre></div></div>
+
+<p><strong>Note:</strong> From an optimization perspective, when there are multiple commands to be executed, do not use multiple RUN instructions. Instead, try to use the &amp;&amp; and \ symbols to connect them into one line, because using multiple RUN instructions will create multiple layers in the image.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RUN yum install httpd httpd-devel -y
+RUN echo test &gt; /var/www/html/index.html
+
+can be turned into:
+RUN yum install httpd httpd-devel -y &amp;&amp; echo test &gt; /var/www/html/index.html
+
+or:
+RUN yum install httpd httpd-devel -y  \
+    &amp;&amp; echo test &gt; /var/www/html/index.html
+</code></pre></div></div>
+
+<ol>
+  <li><strong>CMD</strong></li>
+</ol>
+
+<p>CMD is different from RUN. CMD is used to specify the command to be executed when the container starts, while RUN is used to specify the command to be executed during image building.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>There are 3 formats of CMD:
+CMD ["executable","param1","param2"]
+CMD ["param1","param2"]
+CMD command param1 param2
+</code></pre></div></div>
+
+<p>Each Dockerfile can only have one CMD instruction. If multiple commands are specified, only the last one will be executed.</p>
+
+<p>If the user specifies a command to run when starting the container, it will override the command specified by CMD.</p>
+
+<p>What is command to run when starting a container?
+<code class="language-plaintext highlighter-rouge">docker run -d -p 80:80 [image_name] [commands]</code></p>
+
+<ol>
+  <li><strong>EXPOSE</strong></li>
+</ol>
+
+<p>The EXPOSE instruction is used to specify the port that the container will listen on during runtime.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: EXPOSE &lt;port&gt; [&lt;port&gt;...]
+e.g.: EXPOSE 80 3306 8080
+</code></pre></div></div>
+
+<p>The port mentioned above needs to be mapped to the host port using the -p parameter when running the container with docker run.</p>
+
+<ol>
+  <li><strong>ENV</strong></li>
+</ol>
+
+<p>The ENV instruction is used to specify an environment variable.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: ENV &lt;key&gt; &lt;value&gt; or ENV &lt;key&gt;=&lt;value&gt;
+e.g.: ENV JAVA_HOME=/usr/local/jdkxxxx/
+</code></pre></div></div>
+
+<ol>
+  <li><strong>ADD</strong></li>
+</ol>
+
+<p>The ADD instruction is used to copy files from the host machine to the image.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: ADD &lt;src&gt; &lt;dest&gt;
+The &lt;src&gt; can be a local file or directory, a compressed file, or a URL. If &lt;src&gt; is a URL, then ADD works similarly to the wget command.
+
+The &lt;dest&gt; path can be an absolute path within the container, or a relative path to the working directory.
+</code></pre></div></div>
+
+<ol>
+  <li><strong>COPY</strong></li>
+</ol>
+
+<p>The COPY instruction is similar to the ADD instruction, but the source files for COPY can only be local files.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: COPY &lt;src&gt; &lt;dest&gt;
+</code></pre></div></div>
+
+<ol>
+  <li><strong>ENTRYPOINT</strong></li>
+</ol>
+
+<p>ENTRYPOINT is similar to CMD</p>
+
+<p>Similarities:
+Only one instruction should be written per Dockerfile. If multiple instructions are written, only the last one will take effect.</p>
+
+<p>Differences:
+If the user specifies a command to run when starting the container, the specified command will not override the ENTRYPOINT instruction, but it will override the CMD instruction.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>There are two formats:
+ENTRYPOINT ["executable", "param1", "param2"]
+ENTRYPOINT command param1 param2
+</code></pre></div></div>
+
+<ol>
+  <li><strong>VOLUME</strong></li>
+</ol>
+
+<p>The VOLUME instruction is used to map a directory on the host machine to a directory in the container.</p>
+
+<p>When only specifying the mount point in the VOLUME instruction, Docker will create a new volume for the container, and the directory on the host machine that corresponds to the volume will be automatically generated.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>format: VOLUME ["&lt;mountpoint&gt;"]
+</code></pre></div></div>
+
+<ol>
+  <li><strong>USER</strong></li>
+</ol>
+
+<p>The USER instruction sets the user who starts the container (such as Hadoop requires Hadoop user operation, Oracle requires Oracle user operation), and can be either a username or UID.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USER daemon
+USER 1001
+</code></pre></div></div>
+
+<p><strong>Note</strong>: If the container is set to run as the daemon user, then RUN, CMD, and ENTRYPOINT will all run as that user. After the image build is complete, when running the container with <code class="language-plaintext highlighter-rouge">docker run</code>, you can use the <code class="language-plaintext highlighter-rouge">-u</code> parameter to override the specified user.</p>
+
+<ol>
+  <li><strong>WORKDIR</strong></li>
+</ol>
+
+<p>The WORKDIR instruction sets the working directory, similar to the cd command. It is not recommended to use <code class="language-plaintext highlighter-rouge">RUN cd /root</code>; instead, it is recommended to use the WORKDIR instruction.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WORKDIR /root
+</code></pre></div></div>
+
+<h3 id="423-use-dockerfile-to-build-an-image-demo-nginx-ubuntu">4.2.3 Use Dockerfile to build an image demo (nginx ubuntu)</h3>
+
+<p>Let’s make a directory first:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir nginx-image-make
+cd nginx-image-make/
+</code></pre></div></div>
+
+<p>Make an html file:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "I am building an nginx image..." &gt; index.html
+</code></pre></div></div>
+
+<p>Make a Dockerfile:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim Dockerfile
+--------------------------
+# base image
+FROM ubuntu
+# author
+MAINTAINER "clarencewhite9807@gmail.com"
+# install nginx
+RUN apt-get -y update &amp;&amp; apt-get install nginx -y
+# copy index.html from local to image
+ADD index.html /var/www/html/index.nginx-debian.html
+# make nginx as a foreground service
+RUN echo "daemon off;" &gt;&gt; /etc/nginx/nginx.conf
+# port in container
+EXPOSE 80
+# run the executable file on container start to start nginx service
+CMD /usr/sbin/nginx
+</code></pre></div></div>
+
+<p>Build the image using Dockerfile:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t ubuntu-nginx:v1 .
+</code></pre></div></div>
+
+<p>Check the image we built just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker image ls
+
+REPOSITORY       TAG       IMAGE ID       CREATED        SIZE
+ubuntu-nginx     v1        d8e8e2e8b89d   15 hours ago   163MB
+</code></pre></div></div>
+
+<p>Run the image as a container and check the default html page:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run ubuntu-nginx:v1 -d -p 9000:80
+
+docker ps
+-------------
+CONTAINER ID   IMAGE             COMMAND                  CREATED        STATUS        PORTS                                   NAMES
+9fce15688a3c   ubuntu-nginx:v1   "/bin/sh -c /usr/sbi…"   15 hours ago   Up 15 hours   0.0.0.0:9000-&gt;80/tcp, :::9000-&gt;80/tcp   condescending_ganguly
+
+curl localhost:9000
+-------------
+I am building an nginx image...
+</code></pre></div></div>
+
+<h2 id="43-optimizing-container-image-generation-using-dockerfile">4.3 Optimizing container image generation using Dockerfile</h2>
+
+<h3 id="431-reducing-image-layers">4.3.1 Reducing image layers</h3>
+
+<p>In a Dockerfile, there are multiple types of instructions. Among them, the RUN command is probably the most commonly used instruction when it comes to deployment. When using the RUN command, it is not recommended to use a separate RUN command for each installation. Instead, you can combine multiple installation commands into a single RUN command. This reduces the number of image layers.</p>
+
+<p><strong>Bad version:</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+RUN yum install epel-release -y
+RUN yum install -y gcc gcc-c++ make -y
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz
+RUN tar zxf php-5.6.36.tar.gz
+RUN cd php-5.6.36
+RUN ./configure --prefix=/usr/local/php
+RUN make -j 4
+RUN make install
+EXPOSE 9000
+CMD ["php-fpm"]
+</code></pre></div></div>
+
+<p><strong>Better version:</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+RUN yum install epel-release -y &amp;&amp; \
+    yum install -y gcc gcc-c++ make
+
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz &amp;&amp; \
+    tar zxf php-5.6.36.tar.gz &amp;&amp; \
+    cd php-5.6.36 &amp;&amp; \
+    ./configure --prefix=/usr/local/php &amp;&amp; \
+    make -j 4 &amp;&amp; make install
+EXPOSE 9000
+CMD ["php-fpm"]
+</code></pre></div></div>
+
+<h3 id="432-cleaning-up-unused-data">4.3.2 Cleaning up unused data</h3>
+
+<ul>
+  <li>When using the RUN command in a Dockerfile, every time a new layer is created. If files are not deleted in the same layer where they were created, they will be carried on to another layer regardless of whether they are ultimately deleted or not. Therefore, it’s important to clean up any residual data in each layer to minimize the size of the image.</li>
+  <li>Additionally, it’s recommended to delete the application software packages used during the container image generation process.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM centos:latest
+
+RUN yum install epel-release -y &amp;&amp; \
+    yum install -y gcc gcc-c++ make gd-devel libxml2-devel \
+    libcurl-devel libjpeg-devel libpng-devel openssl-devel \
+    libmcrypt-devel libxslt-devel libtidy-devel autoconf \
+    iproute net-tools telnet wget curl &amp;&amp; \
+    yum clean all &amp;&amp; \
+    rm -rf /var/cache/yum/*
+
+RUN wget http://docs.php.net/distributions/php-5.6.36.tar.gz &amp;&amp; \
+    tar zxf php-5.6.36.tar.gz &amp;&amp; \
+    cd php-5.6.36 &amp;&amp; \
+    ./configure --prefix=/usr/local/php \
+    make -j 4 &amp;&amp; make install &amp;&amp; \
+    cd / &amp;&amp; rm -rf php*
+</code></pre></div></div>
+
+<h3 id="433-multi-stage-build-image">4.3.3 Multi-stage build image</h3>
+
+<p>There are two types of project container images: one copies the project code directly into the container image, which can be launched directly when using the container image the next time; and another type compiles the project source code and then copies it to the container image.</p>
+
+<p>Both methods make the process of creating an image more complex and can result in large container images. It is recommended to use a multi-stage build approach to simplify the creation process and reduce the size of the container image.</p>
+
+<p>An example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM maven AS build
+ADD ./pom.xml pom.xml
+ADD ./src src/
+RUN mvn clean package
+
+FROM baizeyu/tomcat
+RUN rm -rf /usr/local/tomcat/webapps/ROOT
+COPY --from=build target/*.war /usr/local/tomcat/webapps/ROOT.war
+</code></pre></div></div>
+
+<p>The first stage uses the official Maven image as a base image and is named build. The ADD command is used to copy the pom.xml file and the source code files from the local directory to the container. The RUN command starts the Maven build process, which compiles the source code and generates the WAR file. The result of this stage is a new image with the compiled application ready for deployment in the next stage.</p>
+
+<p>The second stage uses a custom Tomcat image named baizeyu/tomcat as the base image. The RUN command removes the default ROOT web application from the Tomcat container. The COPY command retrieves the previously built WAR file from the build stage using the –from flag and copies it to the Tomcat server’s webapps directory with the name ROOT.war.</p>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. The relationship between container and image]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/dockerfile.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/dockerfile.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Docker containerized deployment of enterprise-level application clusters</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/20/docker-containerized-deployment-of-enterprise-level-application-clusters.html" rel="alternate" type="text/html" title="Docker containerized deployment of enterprise-level application clusters" /><published>2023-04-20T00:00:00+01:00</published><updated>2023-04-20T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/20/docker-containerized-deployment-of-enterprise-level-application-clusters</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/20/docker-containerized-deployment-of-enterprise-level-application-clusters.html"><![CDATA[<h1 id="1-docker-containerized-deployment-of-enterprise-level-applications">1. Docker containerized deployment of enterprise-level applications</h1>
+
+<h2 id="11-necessity-of-deploying-enterprise-level-applications-using-docker-containerization">1.1 Necessity of Deploying Enterprise-level Applications Using Docker Containerization</h2>
+
+<ul>
+  <li>Conducive to rapid implementation of enterprise-level application deployment</li>
+  <li>Facilitate rapid implementation of enterprise-level application recovery</li>
+</ul>
+
+<h1 id="2-docker-nginx">2. Docker Nginx</h1>
+
+<p>Here is a demonstration of the technique I use on this site. (link to be updated)</p>
+
+<h1 id="3-docker-tomcat">3. Docker Tomcat</h1>
+
+<h2 id="31-search-for-the-image-on-dockerhub-and-run-it">3.1 Search for the image on DockerHub and run it</h2>
+
+<p>https://hub.docker.com/_/tomcat</p>
+
+<h3 id="311-without-port-exposure">3.1.1 Without port exposure</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -d --rm tomcat:9.0
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE        COMMAND                  CREATED             STATUS             PORTS                                                  NAMES
+c20a0e781246   tomcat:9.0   "catalina.sh run"        27 seconds ago      Up 25 seconds      8080/tcp                                               heuristic_cori
+</code></pre></div></div>
+
+<h3 id="312-with-port-exposure">3.1.2 With port exposure</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -d -p 8080:8080 --rm tomcat:9.0
+2fcf5762314373c824928490b871138a01a94abedd7e6814ad5f361d09fbe1de
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE        COMMAND                  CREATED             STATUS             PORTS                                                  NAMES
+2fcf57623143   tomcat:9.0   "catalina.sh run"        3 seconds ago       Up 1 second        0.0.0.0:8080-&gt;8080/tcp, :::8080-&gt;8080/tcp              eloquent_chatelet
+</code></pre></div></div>
+
+<p>Then you can go to localhost:8080.</p>
+
+<h3 id="313-port-exposure-and-add-a-static-file">3.1.3 Port exposure and add a static file</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d -p 8081:8080 -v /opt/tomcat-server:/usr/local/tomcat/webapps/ROOT tomcat:9.0
+
+# f456e705d48fc603b7243a435f0edd6284558c194e105d87befff2dccddc0b63
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+
+CONTAINER ID   IMAGE        COMMAND             CREATED         STATUS         PORTS                                       NAMES
+f456e705d48f   tomcat:9.0   "catalina.sh run"   3 seconds ago   Up 2 seconds   0.0.0.0:8081-&gt;8080/tcp, :::8081-&gt;8080/tcp   cool_germain
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># echo "tomcat running" &gt; /opt/tomcat-server/index.html
+</code></pre></div></div>
+
+<p><strong>Access on localhost</strong></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@master-01:~# curl localhost:8081
+
+tom cat running
+</code></pre></div></div>
+
+<h1 id="4-docker-mysql">4. Docker MySQL</h1>
+
+<h2 id="41-single-node-mysql-deployment">4.1 Single Node MySQL Deployment</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -p 3306:3306 --name=mysql-container \
+-e MYSQL_ROOT_PASSWORD=your_password \
+-e MYSQL_DATABASE=your_database \
+-d mysql
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                 NAMES
+6f0303faae0c   mysql     "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes   3306/tcp, 33060/tcp   mysql-container
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Access via client inside container
+# docker exec -it mysql-container mysql -u root -p
+Enter password: your_password
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 10
+Server version: 8.0.33 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt;
+</code></pre></div></div>
+
+<h2 id="42-mysql-master-slave-node-deployment">4.2 MySQL Master-Slave Node Deployment</h2>
+
+<h3 id="421-master-node">4.2.1 Master Node</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -p 3306:3306 --name=mysql-master \
+-e MYSQL_ROOT_PASSWORD=root \
+-e MYSQL_DATABASE=your_database \
+-v /opt/mysql_master/log:/var/log \
+-v /opt/mysql_master/data:/var/lib/mysql \
+-d mysql
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                                  NAMES
+024f3008ec0e   mysql     "docker-entrypoint.s…"   3 seconds ago   Up 2 seconds   0.0.0.0:3306-&gt;3306/tcp, :::3306-&gt;3306/tcp, 33060/tcp   mysql-master
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker cp mysql-master:/etc/my.cnf /opt/mysql_master/config/my.cnf
+</code></pre></div></div>
+
+<h3 id="422-master-node-config-file">4.2.2 Master Node Config File</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /opt/mysql_master/config/my.cnf
+
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/8.0/en/server-configuration-defaults.html
+
+[mysqld]
+#
+# Remove leading # and set to the amount of RAM for the most important data
+# cache in MySQL. Start at 70% of total RAM for dedicated server, else 10%.
+# innodb_buffer_pool_size = 128M
+#
+# Remove leading # to turn on a very important data integrity option: logging
+# changes to the binary log between backups.
+# log_bin
+#
+# Remove leading # to set options mainly useful for reporting servers.
+# The server defaults are faster for transactions and fast SELECTs.
+# Adjust sizes as needed, experiment to find the optimal values.
+# join_buffer_size = 128M
+# sort_buffer_size = 2M
+# read_rnd_buffer_size = 2M
+
+# Remove leading # to revert to previous value for default_authentication_plugin,
+# this will increase compatibility with older clients. For background, see:
+# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_default_authentication_plugin
+# default-authentication-plugin=mysql_native_password
+skip-host-cache
+skip-name-resolve
+datadir=/var/lib/mysql
+socket=/var/run/mysqld/mysqld.sock
+secure-file-priv=/var/lib/mysql-files
+user=mysql
+
+pid-file=/var/run/mysqld/mysqld.pid
+
+# add these to the file!!!!!!!!!!!!!!!!!!!! (start)
+server_id=1
+log-bin=mysql-bin
+read-only=0
+binlog-do-db=your_database
+
+replicate-ignore-db=mysql
+replicate-ignore-db=sys
+replicate-ignore-db=information_schema
+replicate-ignore-db=performance_schema
+
+# add these to the file!!!!!!!!!!!!!!!!!!!!! (end)
+
+[client]
+socket=/var/run/mysqld/mysqld.sock
+
+!includedir /etc/mysql/conf.d/
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker cp /opt/mysql_master/config/my.cnf mysql-master:/etc/my.cnf
+docker restart mysql-master
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-master mysql -u root -p
+</code></pre></div></div>
+
+<h3 id="423-slave-node">4.2.3 Slave Node</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -p 3307:3306 --name mysql-slave \
+-e MYSQL_ROOT_PASSWORD=root \
+-e MYSQL_DATABASE=your_database \
+-v /opt/mysql_slave/log:/var/log \
+-v /opt/mysql_slave/data:/var/lib/mysql \
+-d --link mysql-master:mysql-master mysql
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
+f880333ee83b   mysql     "docker-entrypoint.s…"   22 minutes ago   Up 4 minutes    33060/tcp, 0.0.0.0:3307-&gt;3306/tcp, :::3307-&gt;3306/tcp   mysql-slave
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir /opt/mysql_slave/config
+docker cp mysql-slave:/etc/my.cnf /opt/mysql_slave/config/my.cnf
+</code></pre></div></div>
+
+<h3 id="424-slave-node-config-file">4.2.4 Slave Node Config File</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># vim /opt/mysql_slave/config/my.cnf
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/8.0/en/server-configuration-defaults.html
+
+[mysqld]
+#
+# Remove leading # and set to the amount of RAM for the most important data
+# cache in MySQL. Start at 70% of total RAM for dedicated server, else 10%.
+# innodb_buffer_pool_size = 128M
+#
+# Remove leading # to turn on a very important data integrity option: logging
+# changes to the binary log between backups.
+# log_bin
+#
+# Remove leading # to set options mainly useful for reporting servers.
+# The server defaults are faster for transactions and fast SELECTs.
+# Adjust sizes as needed, experiment to find the optimal values.
+# join_buffer_size = 128M
+# sort_buffer_size = 2M
+# read_rnd_buffer_size = 2M
+
+# Remove leading # to revert to previous value for default_authentication_plugin,
+# this will increase compatibility with older clients. For background, see:
+# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_default_authentication_plugin
+# default-authentication-plugin=mysql_native_password
+skip-host-cache
+skip-name-resolve
+datadir=/var/lib/mysql
+socket=/var/run/mysqld/mysqld.sock
+secure-file-priv=/var/lib/mysql-files
+user=mysql
+
+pid-file=/var/run/mysqld/mysqld.pid
+
+# add these to the file!!!!!!!!!!!!!!!!!!!!! (start)
+
+server_id=2
+log-bin=mysql-bin
+read-only=1
+binlog-do-db=your_database
+
+replicate-ignore-db=mysql
+replicate-ignore-db=sys
+replicate-ignore-db=information_schema
+replicate-ignore-db=performance_schema
+
+# add these to the file!!!!!!!!!!!!!!!!!!!!! (end)
+
+[client]
+socket=/var/run/mysqld/mysqld.sock
+
+!includedir /etc/mysql/conf.d/
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker cp /opt/mysql_slave/config/my.cnf mysql-slave:/etc/my.cnf
+docker restart mysql-slave
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-slave mysql -u root -p
+</code></pre></div></div>
+
+<h3 id="425-config-master-node">4.2.5 Config Master Node</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-master mysql -u root -p
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>use mysql;
+# Database changed
+
+create user 'backup'@'%' identified with mysql_native_password by '123456';
+# Query OK, 0 rows affected (0.01 sec)
+
+grant all privileges on *.* to 'backup'@'%' with grant option;
+# Query OK, 0 rows affected (0.00 sec)
+
+flush privileges;
+# Query OK, 0 rows affected (0.01 sec)
+
+show master status\G
+# *************************** 1. row ***************************
+             File: mysql-bin.000001
+         Position: 157
+     Binlog_Do_DB: your_database
+ Binlog_Ignore_DB:
+Executed_Gtid_Set:
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<h3 id="426-config-slave-node">4.2.6 Config Slave Node</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-slave mysql -u root -p
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; change master to
+    -&gt; master_host='mysql-master',
+    -&gt; master_user='backup',
+    -&gt; master_password='123456',
+    -&gt; master_log_file='mysql-bin.000001',
+    -&gt; master_log_pos=157,
+    -&gt; master_port=3306;
+# Query OK, 0 rows affected, 9 warnings (0.02 sec)
+
+mysql&gt; start slave;
+# Query OK, 0 rows affected, 1 warning (0.02 sec)
+
+show slave status\G
+# *************************** 1. row ***************************
+               Slave_IO_State: Waiting for source to send event
+                  Master_Host: mysql-master
+                  Master_User: backup
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000001
+          Read_Master_Log_Pos: 157
+               Relay_Log_File: f880333ee83b-relay-bin.000002
+                Relay_Log_Pos: 326
+        Relay_Master_Log_File: mysql-bin.000001
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB:
+          Replicate_Ignore_DB: mysql,sys,information_schema,performance_schema
+           Replicate_Do_Table:
+       Replicate_Ignore_Table:
+      Replicate_Wild_Do_Table:
+  Replicate_Wild_Ignore_Table:
+                   Last_Errno: 0
+                   Last_Error:
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 157
+              Relay_Log_Space: 543
+              Until_Condition: None
+               Until_Log_File:
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File:
+           Master_SSL_CA_Path:
+              Master_SSL_Cert:
+            Master_SSL_Cipher:
+               Master_SSL_Key:
+        Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error:
+               Last_SQL_Errno: 0
+               Last_SQL_Error:
+  Replicate_Ignore_Server_Ids:
+             Master_Server_Id: 1
+                  Master_UUID: 913b5d44-df92-11ed-b2d5-0242ac110002
+             Master_Info_File: mysql.slave_master_info
+                    SQL_Delay: 0
+          SQL_Remaining_Delay: NULL
+      Slave_SQL_Running_State: Replica has read all relay log; waiting for more updates
+           Master_Retry_Count: 86400
+                  Master_Bind:
+      Last_IO_Error_Timestamp:
+     Last_SQL_Error_Timestamp:
+               Master_SSL_Crl:
+           Master_SSL_Crlpath:
+           Retrieved_Gtid_Set:
+            Executed_Gtid_Set:
+                Auto_Position: 0
+         Replicate_Rewrite_DB:
+                 Channel_Name:
+           Master_TLS_Version:
+       Master_public_key_path:
+        Get_master_public_key: 0
+            Network_Namespace:
+1 row in set, 1 warning (0.00 sec)
+</code></pre></div></div>
+
+<h3 id="427-verify-the-availability-of-the-mysql-cluster">4.2.7 Verify the Availability of the MySQL Cluster</h3>
+
+<p>We are going to add a table in DB ‘your_database’ on master (we must use this DB, because we only put this DB in the config file for sync):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-master mysql -u root -p
+
+mysql&gt; use your_database;
+# Database changed
+
+mysql&gt; create table test (id int);
+# Query OK, 0 rows affected (0.03 sec)
+
+mysql&gt; show tables ;
++-------------------------+
+| Tables_in_your_database |
++-------------------------+
+| test                    |
++-------------------------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>Check the sync status on slave node:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec -it mysql-slave mysql -u root -p
+
+mysql&gt; use your_database;
+# Database changed
+
+mysql&gt; show tables;
++-------------------------+
+| Tables_in_your_database |
++-------------------------+
+| test                    |
++-------------------------+
+1 row in set (0.00 sec)
+</code></pre></div></div>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Docker containerized deployment of enterprise-level applications]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_enterprise.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_enterprise.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Recording a hiking and exploration experience</title><link href="baizeyu.info/baizeyu.info/life/2023/04/20/recording-a-hiking-and-exploration-experience.html" rel="alternate" type="text/html" title="Recording a hiking and exploration experience" /><published>2023-04-20T00:00:00+01:00</published><updated>2023-04-20T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/life/2023/04/20/recording-a-hiking-and-exploration-experience</id><content type="html" xml:base="baizeyu.info/baizeyu.info/life/2023/04/20/recording-a-hiking-and-exploration-experience.html"><![CDATA[<p>On Saturday, April 15th, I woke up early and went alone to the Great Sugar Loaf in Wicklow. I had never been to that mountain before, so I did not know the correct route to take up the mountain. However, I knew that the highest peak was my goal for the day, and I needed to find a way to reach it. After getting off the bus, I stood at the foot of the mountain and gazed up at the summit.</p>
+
+<p>I did not have any guide or plan, but only saw a white line on Google Maps that seemed like a route to the summit. I assumed that it would be an easy pathway taken by everyone. However, I realized halfway up that the white line was actually a small stream flowing down from the peak. The route was full of water holes on the muddy ground covered by dense vegetation, with no clear path ahead. I felt lost and confused about how to proceed.</p>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-20-11-11-16.jpg" id="blog-image" />
+</p>
+
+<p>But when I looked up at the summit, I told myself that the journey up the mountain was like life’s uncertainties. You never know if your choices will be difficult or simple, and what challenges you might face. However, I could see the summit, and that was where I needed to go. So, I put on some climbing music, focused on the destination, and searched for a path that would lead me towards my goal. I changed my target to a point 50 meters away from me, and aimed to reach there despite the obstacles in my way.</p>
+
+<p>By setting small targets and concentrating on each step, I gradually shifted my attention from the pain to the present moment. After 50 minutes of exploration, I finally found the right path leading to the summit. I joyfully sprinted along the pathway, leaving behind all the hardships I had endured. When I reached another fork in the road, I was faced with two routes that led to the summit. One was an easy route with large rocks for stepping on, but it would take more time since it was not so steep. The other was a steeper route almost 80° angle, with no one else around to help if anything went wrong.</p>
+
+<p>I chose the second path and rested for two minutes at the junction, took a deep breath and began climbing. I continued to set small goals for myself, focusing on reaching each point along the way. I climbed up step by step, without getting tired or discouraged. Finally, standing at the summit, I looked down at the beautiful coastline and marveled at my own abilities. I had achieved my goal through perseverance and determination.</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-20-11-13-14.jpg" id="blog-image" /></p>
+
+<p>After sitting at the summit for 20 minutes, I started on my journey back down. Once again, fate played a trick on me, and I found myself lost midway through the descent. However, this time my mindset had changed. I was no longer worried about whether I could get back down safely because I knew that I could. I had overcome the uncertainty of climbing up the mountain. Although I was on the wrong path, I still saw sights that others couldn’t see and smelled the fragrance of April flowers that others couldn’t smell.</p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-20-11-13-34.jpg" id="blog-image" /></p>
+
+<p align="center"><img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-20-11-13-54.jpg" id="blog-image" /></p>
+
+<p>As expected, after many twists and turns, I finally made it back to the bus stop. I was so exhausted that I fell asleep on the bus ride back. When I got off the bus, my legs were numb, and it took 100 meters of walking before I regained feeling in them.</p>
+
+<p>This experience taught me that although some things in life can be certain, it is the unexpected uncertainties that are worth challenging ourselves with. Pursuing stability is encoded in human genes, but courage and action in the face of uncertainty are the treasures that bring vitality to our lives.</p>]]></content><author><name></name></author><category term="Life" /><summary type="html"><![CDATA[On Saturday, April 15th, I woke up early and went alone to the Great Sugar Loaf in Wicklow. I had never been to that mountain before, so I did not know the correct route to take up the mountain. However, I knew that the highest peak was my goal for the day, and I needed to find a way to reach it. After getting off the bus, I stood at the foot of the mountain and gazed up at the summit.]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/hike.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/hike.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">The Old Architecture of this website</title><link href="baizeyu.info/baizeyu.info/java/2023/04/19/the-architecture-of-this-website.html" rel="alternate" type="text/html" title="The Old Architecture of this website" /><published>2023-04-19T00:00:00+01:00</published><updated>2023-04-19T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/java/2023/04/19/the-architecture-of-this-website</id><content type="html" xml:base="baizeyu.info/baizeyu.info/java/2023/04/19/the-architecture-of-this-website.html"><![CDATA[<h1 id="architecture-diagram">Architecture Diagram</h1>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-6-11-47-31.jpg" id="blog-image" />
+</p>
+
+<h1 id="intro">Intro</h1>
+
+<p>There are 6 docker containers in this app, all of them are under the same docker network, so they can communicate with each other easily. Once there is a code update, a bash script can be executed to automate the re-deployment process.</p>
+
+<h1 id="update-logs">Update Logs</h1>
+
+<ul>
+  <li>2023.3 - 2023.4:
+    <ul>
+      <li>Rebuilt the overall architecture to improve the stability and aesthetics of the site;</li>
+      <li>Added image upload feature in online Markdown editor.</li>
+    </ul>
+  </li>
+  <li>2023.4.18: - Optimized image uploading function in online markdown editor</li>
+</ul>
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/642ea57e01fef57cfca2f646-4-18-12-41-10.jpg" id="blog-image" width="500" />
+</p>
+
+<ul>
+  <li>2023.4.19:
+    <ul>
+      <li>Updated SSL certificate for the next 5 years, cost me 20$.</li>
+    </ul>
+  </li>
+</ul>]]></content><author><name></name></author><category term="Java" /><summary type="html"><![CDATA[Architecture Diagram]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/old_arch.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/old_arch.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">How I set and reach goals (not plans) in life?</title><link href="baizeyu.info/baizeyu.info/life/2023/04/16/how-i-set-and-reach-goals-(not-plans)-in-life.html" rel="alternate" type="text/html" title="How I set and reach goals (not plans) in life?" /><published>2023-04-16T00:00:00+01:00</published><updated>2023-04-16T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/life/2023/04/16/how-i-set-and-reach-goals-(not-plans)-in-life</id><content type="html" xml:base="baizeyu.info/baizeyu.info/life/2023/04/16/how-i-set-and-reach-goals-(not-plans)-in-life.html"><![CDATA[<p>When we talk about goals or plans, the first thing that comes to mind is usually a to-do list or an organized timetable that includes what we will be doing during a certain period of time, like the picture below:</p>
+
+<p align="center">
+   <img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-12-10-50-47.jpg" id="blog-image" width="400" />
+ </p>
+
+<p>However, when you actually follow this type of table, you may end up disrupting the entire plan because you are unable to complete tasks within the designated time blocks. You might also easily become frustrated.</p>
+
+<p>I prefer an objective-oriented approach to setting goals in daily life. In this way, time blocks are not fixed, and everything can be flexible. At the same time, goals can be reached without a sense of urgency but achievement. Let me show you an example:</p>
+
+<p>Instead of saying, “<strong>I am going to learn English from 9-10 am today, I will sit there and read/listen to the book, and I will start exactly at 9 and end at 10, then move on to the next task</strong>”, I would say, “<strong>I am going to study chapters 1&amp;2 of the material in the next 5 days. After that, I will have a short break and can start new interesting chapters based on the ideas I learned from the first two chapters. Once I have a big time block during the day, I will move a little bit forward to complete the small goal set for the week/day</strong>”. Of course, we can have multiple goals for a week or a month. By switching among them, we can achieve our goals without getting bored easily.</p>
+
+<p>Therefore, setting small goals instead of “big plans” is a better way to stay motivated. The goal represents desire, and setting oneself a short-term goal and focusing on achieving it is actually the pursuit of conquering and satisfying desire.</p>]]></content><author><name></name></author><category term="Life" /><summary type="html"><![CDATA[When we talk about goals or plans, the first thing that comes to mind is usually a to-do list or an organized timetable that includes what we will be doing during a certain period of time, like the picture below:]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/goal.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/goal.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Introduction to Docker Image</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/14/introduction-to-docker-image.html" rel="alternate" type="text/html" title="Introduction to Docker Image" /><published>2023-04-14T00:00:00+01:00</published><updated>2023-04-14T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/14/introduction-to-docker-image</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/14/introduction-to-docker-image.html"><![CDATA[<h1 id="1-operations-on-docker-images">1. Operations on Docker images</h1>
+
+<h2 id="11-check-local-images">1.1 Check local images</h2>
+
+<h3 id="111-use-docker-images-command">1.1.1 Use <code class="language-plaintext highlighter-rouge">docker images</code> command</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+bash         latest    5557e073f11c   2 weeks ago    13MB
+nginx        latest    605c77e624dd   3 weeks ago    141MB
+centos       latest    5d0da3dc9764   4 months ago   231MB
+</code></pre></div></div>
+
+<h3 id="112-use-docker-image-command">1.1.2 Use <code class="language-plaintext highlighter-rouge">docker image</code> command</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker image list (or ls)
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+bash         latest    5557e073f11c   2 weeks ago    13MB
+nginx        latest    605c77e624dd   3 weeks ago    141MB
+centos       latest    5d0da3dc9764   4 months ago   231MB
+</code></pre></div></div>
+
+<h3 id="113-find-the-location-of-docker-image-locally">1.1.3 Find the location of docker image locally</h3>
+
+<blockquote>
+  <p>Considering that Docker container images can take up local storage space, it is recommended to set up other storage systems and mount them locally to solve the problem of consuming a large amount of local storage.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker
+buildkit  containers  image  network  overlay2  plugins  runtimes  swarm  tmp  trust  volumes
+</code></pre></div></div>
+
+<h2 id="12-search-for-images-on-docker-hub">1.2 Search for images on Docker Hub</h2>
+
+<h3 id="121-command-line-searching">1.2.1 Command line searching</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker search centos
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Outputs
+NAME                              DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
+centos                            The official build of CentOS.                   6987      [OK]
+ansible/centos7-ansible           Ansible on Centos7                              135                  [OK]
+consol/centos-xfce-vnc            Centos container with "headless" VNC session…   135                  [OK]
+jdeathe/centos-ssh                OpenSSH / Supervisor / EPEL/IUS/SCL Repos - …   121                  [OK]
+</code></pre></div></div>
+
+<h3 id="122-docker-hub-website">1.2.2 Docker Hub Website</h3>
+
+<p>Just go to this website and search for the image you want: https://hub.docker.com/.</p>
+
+<h2 id="13-pull-images">1.3 Pull images</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker pull centos
+</code></pre></div></div>
+
+<h2 id="14-remove-images">1.4 Remove images</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+bash         latest    5557e073f11c   2 weeks ago    13MB
+nginx        latest    605c77e624dd   3 weeks ago    141MB
+centos       latest    5d0da3dc9764   4 months ago   231MB
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker rmi centos
+Untagged: centos:latest
+Untagged: centos@sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177
+Deleted: sha256:5d0da3dc976460b72c77d94c8a1ad043720b0416bfc16c52c45d4847e53fadb6
+Deleted: sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59
+</code></pre></div></div>
+
+<p>or</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+centos       latest    5d0da3dc9764   4 months ago   231MB
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker rmi 5d0da3dc9764
+</code></pre></div></div>
+
+<h1 id="2-introduction-to-docker-image">2. Introduction to Docker image</h1>
+
+<h2 id="21-docker-image">2.1 Docker Image</h2>
+
+<ul>
+  <li>Docker images are read-only container templates and are the foundation of Docker containers.</li>
+  <li>They provide a static file system runtime environment (rootfs) for Docker containers.</li>
+  <li>Docker images represent the static state of a container.</li>
+  <li>Containers represent the running state of a Docker image.</li>
+</ul>
+
+<h2 id="22-union-filesystem">2.2 Union Filesystem</h2>
+
+<h3 id="221-definition">2.2.1 Definition</h3>
+
+<ul>
+  <li>Union File System is a file system that implements union mount technology.</li>
+  <li>Union mount technology allows multiple file systems to be mounted at the same mount point, integrating the original directory of the mount point with the mounted content, so that the resulting visible file system contains the layered files and directories after integration.</li>
+</ul>
+
+<h3 id="222-architecture">2.2.2 Architecture</h3>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-14-17-49-58.jpg" id="blog-image" />
+</p>
+
+<h2 id="23-docker-overlay2">2.3 Docker Overlay2</h2>
+
+<p>There are several ways to implement storage drivers for container file systems, including aufs, devicemapper, overlay, and overlay2. In this case, we will use overlay2 as an example for explanation.</p>
+
+<h3 id="231-concepts">2.3.1 Concepts</h3>
+
+<ul>
+  <li>Registry/Repository: The registry is a collection of repositories, and a repository is a collection of images.</li>
+  <li>Image: An image is metadata that stores information related to the image, including its architecture, default configuration information, container configuration information, and more. It is a “logical” concept and does not correspond to a physical image file.</li>
+  <li>Layer: A layer (image layer) makes up the image, and a single layer can be shared by multiple images.</li>
+</ul>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-14-17-51-33.jpg" id="blog-image" />
+</p>
+
+<h3 id="232-check-the-storage-driver-of-the-docker-host">2.3.2 Check the storage driver of the Docker Host</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker info | grep overlay
+ Storage Driver: overlay2
+</code></pre></div></div>
+
+<h3 id="233-layers-of-images">2.3.3 Layers of images</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker pull nginx
+Using default tag: latest
+latest: Pulling from library/nginx
+a2abf6c4d29d: Pull complete
+a9edb18cadd1: Pull complete
+589b7251471a: Pull complete
+186b1aaa4aa6: Pull complete
+b4df32aa5a72: Pull complete
+a0bcbecc962e: Pull complete
+Digest: sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31
+Status: Downloaded newer image for nginx:latest
+docker.io/library/nginx:latest
+</code></pre></div></div>
+
+<p>We can see that the downloaded image consists of 6 layers. How to find out where these 6 layers are stored on the Docker Host?</p>
+
+<p>Firstly, check Nginx image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+nginx        latest    605c77e624dd   3 weeks ago    141MB
+</code></pre></div></div>
+
+<p>We can find the storage location via the Image ID 605c77e624dd:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker/image/overlay2/
+distribution  imagedb  layerdb  repositories.json
+</code></pre></div></div>
+
+<p>This directory is the entry point for the search and is very important. It stores the metadata for image management.</p>
+
+<ul>
+  <li>repositories.json: records the mapping between repo and image ID.</li>
+  <li>imagedb: It records the architecture of the image, the operating system, the container ID and configuration used to build the image, and the rootfs information.</li>
+  <li>layerdb: Records the metadata of each layer.</li>
+</ul>
+
+<p>Find the long ID of the image nginx by looking up the repositories.json file using its short ID, and then use the long ID to locate the metadata of this image in the imagedb:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/repositories.json | grep 605c77e624dd
+{"Repositories":"nginx":{"nginx:latest":"sha256:605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85","nginx@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31":"sha256:605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85"}}}}
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/imagedb/content/sha256/605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85
+......
+"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f","sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8","sha256:b8d6e692a25e11b0d32c5c3dd544b71b1085ddc1fddad08e68cbd7fda7f70221","sha256:f1db227348d0a5e0b99b15a096d930d1a69db7474a1847acbc31f05e4ef8df8c","sha256:32ce5f6a5106cc637d09a98289782edf47c32cb082dc475dd47cbf19a4f866da","sha256:d874fd2bc83bb3322b566df739681fbd2248c58d3369cb25908d68e7ed6040a6"]}}
+</code></pre></div></div>
+
+<p>Here we keep only the metadata we want, which is <code class="language-plaintext highlighter-rouge">rootfs</code>. In <code class="language-plaintext highlighter-rouge">rootfs</code>, we can see that there are 6 layers in the <code class="language-plaintext highlighter-rouge">layers</code> directory, which correspond to the 6 image layers of the Docker image. These layers are mapped from bottom to top in the container. Having found the 6 layers of the image, the next question is where the file contents of each layer are located.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">layerdb</code> metadata will provide us with the information we need. By using the base layer diff ID<code class="language-plaintext highlighter-rouge">2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f</code>, we can find the <code class="language-plaintext highlighter-rouge">cache_id</code> of the bottom layer image. By using this <code class="language-plaintext highlighter-rouge">cache_id</code>, we can find the file contents of the image layer.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
+cache-id  diff  size  tar-split.json.gz
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f/cache-id
+85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f/diff
+sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
+</code></pre></div></div>
+
+<p>Use cacheID to check the content of the file</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker/overlay2/85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7
+committed  diff  link
+# ls /var/lib/docker/overlay2/85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7/diff
+bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr
+</code></pre></div></div>
+
+<p>In the example above, the image metadata and image layer contents are stored separately. Therefore, by using the <code class="language-plaintext highlighter-rouge">cache_id</code>, we need to find the image layer contents in the <code class="language-plaintext highlighter-rouge">/var/lib/docker/overlay2</code> directory. The contents exist in the <code class="language-plaintext highlighter-rouge">diff</code> directory, where the <code class="language-plaintext highlighter-rouge">link</code> file stores the short ID corresponding to the image layer. We will see its usage later on.</p>
+
+<p>After finding the bottom layer of the image, we can proceed to look for the “middle layers” of the image. We found out that there is no image layer with diff ID <code class="language-plaintext highlighter-rouge">e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8</code> in the <code class="language-plaintext highlighter-rouge">layerdb</code> directory.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker/image/overlay2/layerdb/sha256/e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8
+ls: error /var/lib/docker/image/overlay2/layerdb/sha256/e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8: no such directory
+</code></pre></div></div>
+
+<p>This is because Docker introduced a content-addressable mechanism, which indexes images and image layers based on their file contents. Docker uses the <code class="language-plaintext highlighter-rouge">diff_id</code> in the <code class="language-plaintext highlighter-rouge">rootfs</code> to calculate the content-addressable <code class="language-plaintext highlighter-rouge">chainID</code>. By using this <code class="language-plaintext highlighter-rouge">chainID</code>, layer information can be obtained, and ultimately the content of the image layer file can be indexed.</p>
+
+<p>For the bottom layer of the image, its diff_id is also the chainID. Therefore, we can find the file contents of this layer. For layers other than the bottom layer, the chainID is calculated using the formula chainID(n) = SHA256(chain(n-1) + diffID(n)).</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># echo -n "sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8" | sha256sum -
+780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5  -
+</code></pre></div></div>
+
+<p>Find files contents based on the “middle layer” <code class="language-plaintext highlighter-rouge">chainID</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5
+cache-id  diff  parent  size  tar-split.json.gz
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/cache-id
+57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/diff
+sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/parent
+sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Content of the image layer:
+# ls /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c
+committed  diff  link  lower  work
+# ls /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c/diff/
+docker-entrypoint.d  etc  lib  tmp  usr  var
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>short id:
+# cat /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c/link
+24GM2IZVPTUROAG7AWJO5ZWE6B
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>parent image layer short id:
+# cat /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c/lower
+l/SICZO4QNVZEVOIJ4HDXVDKNYA2
+</code></pre></div></div>
+
+<p>Once the file contents for the bottom layer and middle layers are found, it becomes easy to locate the file contents for the top layer.</p>
+
+<h2 id="24-docker-container-and-image">2.4 Docker container and image</h2>
+
+<p>Use <code class="language-plaintext highlighter-rouge">docker run</code> to start an Nginx container</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -d nginx:latest
+3272831107a3499afe8160b0cd423e2ac4223522f1995b7be3504a1d3d272878
+# docker ps | grep nginx
+3272831107a3   nginx:latest   "/docker-entrypoint.…"   11 seconds ago   Up 9 seconds   80/tcp    angry_beaver
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mount | grep overlay
+overlay on /var/lib/docker/overlay2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/merged type overlay (rw,relatime,seclabel,lowerdir=/var/lib/docker/overlay2/l/MS2X66BYF6UZ7EKUWMZJKCF4HO:/var/lib/docker/overlay2/l/ODJROQUGY3WQMOGQ3BLYZGIAG4:/var/lib/docker/overlay2/l/Q5LOBFJRH5M7M5CMSWW5L4VYOY:/var/lib/docker/overlay2/l/ZR35FN2E3WEARZV4HLRU373FT7:/var/lib/docker/overlay2/l/NSM2PTAT6TIT2H6G3HFNGZJH5N:/var/lib/docker/overlay2/l/24GM2IZVPTUROAG7AWJO5ZWE6B:/var/lib/docker/overlay2/l/SICZO4QNVZEVOIJ4HDXVDKNYA2,upperdir=/var/lib/docker/overlay2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/diff,workdir=/var/lib/docker/overla 2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/work)
+</code></pre></div></div>
+
+<p>We can see that a union file system called overlay is mounted into the container when it starts. This file system is composed of three layers:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">lowerdir</code>: the read-only layer, which corresponds to the image’s image layer</li>
+  <li><code class="language-plaintext highlighter-rouge">upperdir</code>: the read-write layer, which is the container’s read-write layer and reflects all read/write operations in the container.</li>
+  <li><code class="language-plaintext highlighter-rouge">workdir</code>: an internal layer of overlayfs used to implement the copy_up operation from the read-only layer to the read-write layer.</li>
+  <li><code class="language-plaintext highlighter-rouge">merge</code>: The directory that is mounted as a unified view inside the container.</li>
+</ul>
+
+<p>What needs to be emphasized here is the read-only layer of the lowerdir image of the container. View the short ID of the read-only layer:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lowerdir=/var/lib/docker/overlay2/l/MS2X66BYF6UZ7EKUWMZJKCF4HO
+/var/lib/docker/overlay2/l/ODJROQUGY3WQMOGQ3BLYZGIAG4
+/var/lib/docker/overlay2/l/Q5LOBFJRH5M7M5CMSWW5L4VYOY
+/var/lib/docker/overlay2/l/ZR35FN2E3WEARZV4HLRU373FT7
+/var/lib/docker/overlay2/l/NSM2PTAT6TIT2H6G3HFNGZJH5N
+/var/lib/docker/overlay2/l/24GM2IZVPTUROAG7AWJO5ZWE6B
+/var/lib/docker/overlay2/l/SICZO4QNVZEVOIJ4HDXVDKNYA2
+</code></pre></div></div>
+
+<p>There are only 6 layers in the mirror layer, but there are 7 short IDs here?
+In the /var/lib/docker/overlay2/l directory we found the answer:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cd /var/lib/docker/overlay2/l
+# pwd
+/var/lib/docker/overlay2/l
+# ls
+24GM2IZVPTUROAG7AWJO5ZWE6B  LZEAXJGRW6HKBBGGB2N4CWMSVJ  R2XTGODAA67NQJM44MIKMDUF4W
+5OI5WMJ2FP7QI7IFWDMHLBRDDN  MS2X66BYF6UZ7EKUWMZJKCF4HO  SICZO4QNVZEVOIJ4HDXVDKNYA2
+644ISPHLTBSSC2KLP6BGHHHZPR  NSM2PTAT6TIT2H6G3HFNGZJH5N  ZR35FN2E3WEARZV4HLRU373FT7
+6CQUILQSJNVTMFFV3ABCCOGOYG  ODJROQUGY3WQMOGQ3BLYZGIAG4
+BQENAYC44O2ZCZFT5URMH5OADK  Q5LOBFJRH5M7M5CMSWW5L4VYOY
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls -l MS2X66BYF6UZ7EKUWMZJKCF4HO/
+Total usage 0
+drwxr-xr-x. 4 root root 43 1月  25 01:27 dev
+drwxr-xr-x. 2 root root 66 1月  25 01:27 etc
+[root@192 l]# ls -l ODJROQUGY3WQMOGQ3BLYZGIAG4/
+Total usage 0
+drwxr-xr-x. 2 root root 41 12月 30 03:28 docker-entrypoint.d
+
+[root@192 l]# ls -l Q5LOBFJRH5M7M5CMSWW5L4VYOY/
+Total usage 0
+drwxr-xr-x. 2 root root 41 12月 30 03:28 docker-entrypoint.d
+[root@192 l]# ls -l ZR35FN2E3WEARZV4HLRU373FT7/
+Total usage 0
+drwxr-xr-x. 2 root root 45 12月 30 03:28 docker-entrypoint.d
+[root@192 l]# ls -l NSM2PTAT6TIT2H6G3HFNGZJH5N/
+Total usage 4
+-rwxrwxr-x. 1 root root 1202 12月 30 03:28 docker-entrypoint.sh
+[root@192 l]# ls -l 24GM2IZVPTUROAG7AWJO5ZWE6B/
+Total usage 4
+drwxr-xr-x.  2 root root    6 12月 30 03:28 docker-entrypoint.d
+drwxr-xr-x. 18 root root 4096 12月 30 03:28 etc
+drwxr-xr-x.  4 root root   45 12月 20 08:00 lib
+drwxrwxrwt.  2 root root    6 12月 30 03:28 tmp
+drwxr-xr-x.  7 root root   66 12月 20 08:00 usr
+drwxr-xr-x.  5 root root   41 12月 20 08:00 var
+[root@192 l]# ls -l SICZO4QNVZEVOIJ4HDXVDKNYA2/
+Total usage 12
+drwxr-xr-x.  2 root root 4096 12月 20 08:00 bin
+drwxr-xr-x.  2 root root    6 12月 12 01:25 boot
+drwxr-xr-x.  2 root root    6 12月 20 08:00 dev
+drwxr-xr-x. 30 root root 4096 12月 20 08:00 etc
+drwxr-xr-x.  2 root root    6 12月 12 01:25 home
+drwxr-xr-x.  8 root root   96 12月 20 08:00 lib
+drwxr-xr-x.  2 root root   34 12月 20 08:00 lib64
+drwxr-xr-x.  2 root root    6 12月 20 08:00 media
+drwxr-xr-x.  2 root root    6 12月 20 08:00 mnt
+drwxr-xr-x.  2 root root    6 12月 20 08:00 opt
+drwxr-xr-x.  2 root root    6 12月 12 01:25 proc
+drwx------.  2 root root   37 12月 20 08:00 root
+drwxr-xr-x.  3 root root   30 12月 20 08:00 run
+drwxr-xr-x.  2 root root 4096 12月 20 08:00 sbin
+drwxr-xr-x.  2 root root    6 12月 20 08:00 srv
+drwxr-xr-x.  2 root root    6 12月 12 01:25 sys
+drwxrwxrwt.  2 root root    6 12月 20 08:00 tmp
+drwxr-xr-x. 11 root root  120 12月 20 08:00 usr
+drwxr-xr-x. 11 root root  139 12月 20 08:00 var
+</code></pre></div></div>
+
+<p>And MS2X66BYF6UZ7EKUWMZJKCF4HO is mapped to the initialization layer init of the container. The content of this layer is the file content related to the container configuration, which is read-only.</p>
+
+<p>The container is started, and docker mounts the content of the image into the container. So, if writing files in the container will have any impact on the image?</p>
+
+<h2 id="25-write-files-in-the-container">2.5 Write files in the container</h2>
+
+<p>It is not difficult to understand that the image layer is read-only, and writing a file in the container is actually writing the file to the readable and writable layer of the overlay.</p>
+
+<p>Here are a few cases to test:</p>
+
+<ul>
+  <li>The file does not exist in the read-write layer, but exists in the read-only layer.</li>
+  <li>The file exists in the read-write layer, but not in the read-only layer.</li>
+  <li>The file does not exist in both the read-write layer and the read-only layer.</li>
+</ul>
+
+<p>We simply build a scenario where neither the read-write layer nor the read-only layer exists:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -it centos:latest bash
+[root@355e99982248 /]# touch bzy.txt
+[root@355e99982248 /]# ls
+bin  etc   lib    lost+found  mnt      opt   root  sbin  sys  usr
+dev  home  lib64  media       bzy.txt  proc  run   srv   tmp  var
+</code></pre></div></div>
+
+<p>Check whether the file exists in the read-write layer:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Check the image for changes
+# docker images
+REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+ubuntu       latest    d13c942271d6   2 weeks ago    72.8MB
+bash         latest    5557e073f11c   2 weeks ago    13MB
+nginx        latest    605c77e624dd   3 weeks ago    141MB
+centos       latest    5d0da3dc9764   4 months ago   231MB
+
+[root@localhost ~]# cat /var/lib/docker/image/overlay2/repositories.json | grep 5d0da3dc9764
+{"Repositories"{"centos:latest":"sha256:5d0da3dc976460b72c77d94c8a1ad043720b0416bfc16c52c45d4847e53fadb6","centos@sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177":"sha256:5d0da3dc976460b72c77d94c8a1ad043720b0416bfc16c52c45d4847e53fadb6"}}}
+
+
+
+[root@localhost ~]# cat /var/lib/docker/image/overlay2/imagedb/content/sha256/5d0da3dc976460b72c77d94c8a1ad043720b0416bfc16c52c45d4847e53fadb6
+{"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59"]}}
+
+
+[root@localhost ~]# ls
+/var/lib/docker/image/overlay2/layerdb/sha256/74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59:
+cache-id  diff  size  tar-split.json.gz
+[root@localhost ~]# cat /var/lib/docker/image/overlay2/layerdb/sha256/74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59/cache-id
+b17bc5c5103514923a30983c48f909e06f366b7aa1e85f112b67abb3ef5cd0cb
+
+[root@localhost ~]# cat /var/lib/docker/image/overlay2/layerdb/sha256/74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59/diff
+sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59
+
+
+[root@localhost ~]# ls /var/lib/docker/overlay2/b17bc5c5103514923a30983c48f909e06f366b7aa1e85f112b67abb3ef5cd0cb
+committed  diff  link
+[root@localhost ~]# ls /var/lib/docker/overlay2/b17bc5c5103514923a30983c48f909e06f366b7aa1e85f112b67abb3ef5cd0cb/diff/
+bin  etc   lib    lost+found  mnt  proc  run   srv  tmp  var
+dev  home  lib64  media       opt  root  sbin  sys  usr
+
+
+Check if the container has changed
+[root@localhost ~]# mount | grep overlay
+type overlay (rw,relatime,seclabel,lowerdir=/var/lib/docker/overlay2/l/R2W2LEMDPRIUFYDVSLIQSCYTGX:/var/lib/docker/overlay2/l/R2XTGODAA67NQJM44MIKMDUF4W,upperdir=/var/lib/docker overlay2/7f0b54c748171872ce564305e394547555cb1182abf802c2262384be3dc78a8f/diff,workdir=/var/lib/docker/overlay2/7f0b54c748171872ce564305e394547555cb1182abf802c2262384be3dc78a8f/work)
+
+
+[root@localhost ~]# ls -l /var/lib/docker/overlay2/l/
+Total usage 0
+
+lrwxrwxrwx. 1 root root 77 1月  25 01:41 R2W2LEMDPRIUFYDVSLIQSCYTGX -&gt; ../7f0b54c748171872ce564305e394547555cb1182abf802c2262384be3dc78a8f-init/diff
+lrwxrwxrwx. 1 root root 72 1月  25 00:29 R2XTGODAA67NQJM44MIKMDUF4W -&gt; ../b17bc5c5103514923a30983c48f909e06f366b7aa1e85f112b67abb3ef5cd0cb/diff
+
+
+[root@localhost ~]# ls /var/lib/docker/overlay2/7f0b54c748171872ce564305e394547555cb1182abf802c2262384be3dc78a8f/diff
+bzy.txt
+
+
+[root@localhost ~]# ls /var/lib/docker/overlay2/7f0b54c748171872ce564305e394547555cb1182abf802c2262384be3dc78a8f/merged/
+bin  etc   lib    lost+found  mnt      opt   root  sbin  sys  usr
+dev  home  lib64  media       bzy.txt  proc  run   srv   tmp  var
+
+</code></pre></div></div>
+
+<h1 id="3-docker-container-image-operation-command">3. Docker container image operation command</h1>
+
+<h2 id="31-docker-commit">3.1 docker commit</h2>
+
+<p>As mentioned in the previous section, writing files in the container will be reflected in the readable and writable layer of the overlay, so can the contents of the files in the readable and writable layer be mirrored?</p>
+
+<p>Yes. Docker implements image building through commit and build operations. commit submits the container as an image, and build builds an image based on an image.</p>
+
+<p>Use commit to submit the container in the previous section as an image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[root@355e99982248 /]#   ctrl+p+q
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE           COMMAND                  CREATED          STATUS          PORTS     NAMES
+355e99982248   centos:latest   "bash"                   21 minutes ago   Up 21 minutes             fervent_perlman
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker commit 355e99982248
+sha256:8965dcf23201ed42d4904e2f10854d301ad93b34bea73f384440692e006943de
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
+&lt;none&gt;       &lt;none&gt;    8965dcf23201   About a minute ago   231MB
+</code></pre></div></div>
+
+<p>The image short ID 8965dcf23201 is the image submitted by the container, check the imagedb metadata of the image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cat  /var/lib/docker/image/overlay2/imagedb/content/sha256/8965dcf23201ed42d4904e2f10854d301ad93b34bea73f384440692e006943de
+......
+"os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59","sha256:551c3089b186b4027e949910981ff1ba54114610f2aab9359d28694c18b0203b"]}}
+</code></pre></div></div>
+
+<p>It can be seen that the diff_id of the first mirror layer from top to bottom of the mirror layer is the same as the diff_id of the centos mirror layer, indicating that each mirror layer can be shared by multiple mirrors. And the extra layer of mirror layer content is the content we wrote to the file in the previous section:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># echo -n "sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59 sha256:551c3089b186b4027e949910981ff1ba54114610f2aab9359d28694c18b0203b" | sha256sum -
+92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b  -
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cd /var/lib/docker/image/overlay2/layerdb/sha256/92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b
+[root@192 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b]# ls
+cache-id  diff  parent  size  tar-split.json.gz
+
+
+
+[root@192 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b]# cat cache-id
+250dc0b4f2c5f27952241a55cd4c286bfaaf8af4b77c9d0a38976df4c147cb95
+
+
+[root@192 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b]# ls /var/lib/docker/overlay2/250dc0b4f2c5f27952241a55cd4c286bfaaf8af4b77c9d0a38976df4c147cb95
+diff  link  lower  work
+
+
+[root@192 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b]# ls /var/lib/docker/overlay2/250dc0b4f2c5f27952241a55cd4c286bfaaf8af4b77c9d0a38976df4c147cb95/diff
+bzy.txt
+
+</code></pre></div></div>
+
+<h2 id="32-docker-save">3.2 docker save</h2>
+
+<blockquote>
+  <p>Export container images for easy sharing.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker save -o centos.tar centos:latest
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls
+
+centos.tar
+</code></pre></div></div>
+
+<h2 id="33-docker-load">3.3 docker load</h2>
+
+<blockquote>
+  <p>Import the container image shared by others to the local, which is usually one of the container image distribution methods.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker load -i centos.tar
+</code></pre></div></div>
+
+<h2 id="34-docker-export">3.4 docker export</h2>
+
+<blockquote>
+  <p>Export the running container.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE           COMMAND                  CREATED       STATUS       PORTS     NAMES
+355e99982248   centos:latest   "bash"                   7 hours ago   Up 7 hours             fervent_perlman
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker export -o centos7.tar 355e99982248
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls
+centos7.tar
+</code></pre></div></div>
+
+<h2 id="35-docker-import">3.5 docker import</h2>
+
+<blockquote>
+  <p>Import the container exported using docker export as a local container image.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ls
+centos7.tar
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker import centos7.tar centos7:v1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker images
+REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
+centos7      v1        3639f9a13231   17 seconds ago       231MB
+</code></pre></div></div>
+
+<p>It is very troublesome to share container images through docker save and docker load, docker export and docker import. Is there a more convenient way to share container images?</p>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Operations on Docker images]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_img.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_img.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Use Container to run Nginx and Docker commands</title><link href="baizeyu.info/baizeyu.info/containerize/2023/04/13/use-container-to-run-nginx-and-docker-commands.html" rel="alternate" type="text/html" title="Use Container to run Nginx and Docker commands" /><published>2023-04-13T00:00:00+01:00</published><updated>2023-04-13T00:00:00+01:00</updated><id>baizeyu.info/baizeyu.info/containerize/2023/04/13/use-container-to-run-nginx-and-docker-commands</id><content type="html" xml:base="baizeyu.info/baizeyu.info/containerize/2023/04/13/use-container-to-run-nginx-and-docker-commands.html"><![CDATA[<h1 id="1-use-docker-to-run-nginx">1. Use docker to run Nginx</h1>
+
+<h2 id="11-use-docker-run-to-run-nginx">1.1 Use ‘docker run’ to run Nginx</h2>
+
+<h3 id="111-inpect-the-process-of-downloading-the-image">1.1.1 Inpect the process of downloading the image</h3>
+
+<blockquote>
+  <p>Loking for the image locally</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -d nginx:latest
+
+Unable to find image 'nginx:latest' locally
+latest: Pulling from library/nginx
+a2abf6c4d29d: Downloading  1.966MB/31.36MB
+a9edb18cadd1: Downloading  1.572MB/25.35MB
+589b7251471a: Download complete
+186b1aaa4aa6: Download complete
+b4df32aa5a72: Waiting
+a0bcbecc962e: Waiting
+</code></pre></div></div>
+
+<h3 id="112-check-the-running-status-of-containers">1.1.2 Check the running status of containers</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -d nginx:latest
+
+9834c8c18a7c7c89ab0ea4119d11bafe9c18313c8006bc02ce57ff54d9a1cc0c
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Command explanation
+docker run (start a container based on a image)
+-d (execute the commands in the image by daemon way)
+nginx (the name of the image)
+latest (tag/version of the image)
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE        COMMAND                  CREATED          STATUS        PORTS     NAMES
+9834c8c18a7c   nginx:latest "/docker-entrypoint.…"   24 seconds ago   Up 23 seconds 80/tcp condescending_pare
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ps is like 'ps' in linux, used to check all running containers
+</code></pre></div></div>
+
+<p><strong>docker ps outputs</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>CONTAINERID</th>
+      <th>IMAGE</th>
+      <th>COMMAND</th>
+      <th>CREATED</th>
+      <th>STATUS</th>
+      <th>PORTS</th>
+      <th>NAMES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>9834c8c18a7c</td>
+      <td>nginx:latest</td>
+      <td>“/docker-entrypoint.…”</td>
+      <td>24 seconds ago</td>
+      <td>Up 23 seconds</td>
+      <td>80/tcp</td>
+      <td>condescending_pare</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="12-access-to-the-service-running-in-the-container">1.2 Access to the service running in the container</h2>
+
+<h3 id="121-get-containers-ip-address">1.2.1 Get container’s ip address</h3>
+
+<blockquote>
+  <p>Don’t have to do this in production</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # docker inspect 9834
+
+ "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "172.17.0.2", 容器IP地址
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "MacAddress": "02:42:ac:11:00:02",
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "d3de2fdbc30ee36a55c1431ef3ae4578392e552009f00b2019b4720735fe5a60",
+                    "EndpointID": "d91f47c9f756ff22dc599a207164f2e9366bd0c530882ce0f08ae2278fb3d50c",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",  (here)
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:11:00:02",
+                    "DriverOpts": null
+                }
+            }
+        }
+    }
+]
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>命令解释
+docker inspect is used to check containers  information
+9834 is the first 4 digits of the container id, we can use a short id sequence to find a container, don't have to copy the whole id
+</code></pre></div></div>
+
+<h3 id="122-network-in-container">1.2.2 Network in container</h3>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/newblog4-13-12-6-29.jpg" id="blog-image" width="500" />
+</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># ip a s
+......
+docker0 is the default bridge network that Docker creates when it is installed. It is a virtual bridge that allows Docker containers to communicate with each other and with the host system, as well as providing connectivity to external networks through the host's network interface. By default, all Docker containers are attached to the docker0 bridge unless otherwise specified. The IP address range for docker0 is 172.17.0.0/16.
+
+5: docker0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default
+    link/ether 02:42:d5:c3:d4:cc brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:d5ff:fec3:d4cc/64 scope link
+       valid_lft forever preferred_lft forever
+
+
+# It is used to connect the network of a container to the host system, and is located in the same namespace as the virtual networking devices within the container.
+
+9: veth393dece@if8: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default
+    link/ether 02:e3:11:58:54:0f brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::e3:11ff:fe58:540f/64 scope link
+       valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<h3 id="123-use-curl-to-access">1.2.3 Use <code class="language-plaintext highlighter-rouge">curl</code> to access</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># curl http://172.17.0.2
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+&lt;style&gt;
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Welcome to nginx!&lt;/h1&gt;
+&lt;p&gt;If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.&lt;/p&gt;
+
+&lt;p&gt;For online documentation and support please refer to
+&lt;a href="http://nginx.org/"&gt;nginx.org&lt;/a&gt;.&lt;br/&gt;
+Commercial support is available at
+&lt;a href="http://nginx.com/"&gt;nginx.com&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Thank you for using nginx.&lt;/em&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<h1 id="2-docker-commands">2. Docker commands</h1>
+
+<h2 id="21-get-help-with-docker-commands">2.1 Get help with docker commands</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker -h
+Flag shorthand -h has been deprecated, please use --help
+
+Usage:  docker [OPTIONS] COMMAND
+
+A self-sufficient runtime for containers
+
+Options:
+      --config string      Location of client config files (default "/root/.docker")
+  -c, --context string     Name of the context to use to connect to the daemon (overrides
+                           DOCKER_HOST env var and default context set with "docker context use")
+  -D, --debug              Enable debug mode
+  -H, --host list          Daemon socket(s) to connect to
+  -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")
+                           (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/root/.docker/key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information and quit
+
+Management Commands:
+  app*        Docker App (Docker Inc., v0.9.1-beta3)
+  builder     Manage builds
+  buildx*     Docker Buildx (Docker Inc., v0.7.1-docker)
+  config      Manage Docker configs
+  container   Manage containers
+  context     Manage contexts
+  image       Manage images
+  manifest    Manage Docker image manifests and manifest lists
+  network     Manage networks
+  node        Manage Swarm nodes
+  plugin      Manage plugins
+  scan*       Docker Scan (Docker Inc., v0.12.0)
+  secret      Manage Docker secrets
+  service     Manage services
+  stack       Manage Docker stacks
+  swarm       Manage Swarm
+  system      Manage Docker
+  trust       Manage trust on Docker images
+  volume      Manage volumes
+
+Commands:
+  attach      Attach local standard input, output, and error streams to a running container
+  build       Build an image from a Dockerfile
+  commit      Create a new image from a container's changes
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create a new container
+  diff        Inspect changes to files or directories on a container's filesystem
+  events      Get real time events from the server
+  exec        Run a command in a running container
+  export      Export a container's filesystem as a tar archive
+  history     Show the history of an image
+  images      List images
+  import      Import the contents from a tarball to create a filesystem image
+  info        Display system-wide information
+  inspect     Return low-level information on Docker objects
+  kill        Kill one or more running containers
+  load        Load an image from a tar archive or STDIN
+  login       Log in to a Docker registry
+  logout      Log out from a Docker registry
+  logs        Fetch the logs of a container
+  pause       Pause all processes within one or more containers
+  port        List port mappings or a specific mapping for the container
+  ps          List containers
+  pull        Pull an image or a repository from a registry
+  push        Push an image or a repository to a registry
+  rename      Rename a container
+  restart     Restart one or more containers
+  rm          Remove one or more containers
+  rmi         Remove one or more images
+  run         Run a command in a new container
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  search      Search the Docker Hub for images
+  start       Start one or more stopped containers
+  stats       Display a live stream of container(s) resource usage statistics
+  stop        Stop one or more running containers
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+  top         Display the running processes of a container
+  unpause     Unpause all processes within one or more containers
+  update      Update configuration of one or more containers
+  version     Show the Docker version information
+  wait        Block until one or more containers stop, then print their exit codes
+</code></pre></div></div>
+
+<h2 id="22-official-docs-on-commands">2.2 Official docs on commands</h2>
+
+<p>https://docs.docker.com/reference/</p>
+
+<h2 id="23-docker-commands-usage">2.3 Docker commands usage</h2>
+
+<h3 id="231-docker-run">2.3.1 docker run</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -i -t --name c1 centos:latest bash
+[root@948f234e22a1 /]#
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run: When running a command in a container, the command is the main process. If there is no command, the container will exit immediately.
+-i: interactive
+-t: terminal
+--name: name the container to c1
+centos:latest: use the latest centos image
+bash: execute bash command in container
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>this is the host name:
+[root@948f234e22a1 /]#
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>check network info in container
+[root@948f234e22a1 /]# ip a s
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+12: eth0@if13: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default
+    link/ether 02:42:ac:11:00:03 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.3/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>check processes in container
+[root@948f234e22a1 /]# ps aux
+USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root          1  0.0  0.1  12036  2172 pts/0    Ss   09:58   0:00 bash
+root         16  0.0  0.0  44652  1784 pts/0    R+   10:02   0:00 ps aux
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>check user info in the container:
+[root@948f234e22a1 /]# cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+mail:x:8:12:mail:/var/spool/mail:/sbin/nologin
+operator:x:11:0:operator:/root:/sbin/nologin
+games:x:12:100:games:/usr/games:/sbin/nologin
+ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
+nobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin
+dbus:x:81:81:System message bus:/:/sbin/nologin
+systemd-coredump:x:999:997:systemd Core Dumper:/:/sbin/nologin
+systemd-resolve:x:193:193:systemd Resolver:/:/sbin/nologin
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>check directory:
+[root@948f234e22a1 /]# pwd
+/
+[root@948f234e22a1 /]# ls
+bin  etc   lib    lost+found  mnt  proc  run   srv  tmp  var
+dev  home  lib64  media       opt  root  sbin  sys  usr
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>exit the container:
+[root@948f234e22a1 /]# exit
+exit
+[root@localhost ~]#
+</code></pre></div></div>
+
+<h3 id="232-docker-ps">2.3.2 docker ps</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps -a
+CONTAINER ID   IMAGE           COMMAND     CREATED             STATUS                         PORTS     NAMES
+948f234e22a1   centos:latest   "bash"    10 minutes ago      Exited (0) 2 minutes ago                    c1
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>CONTAINERID</th>
+      <th>IMAGE</th>
+      <th>COMMAND</th>
+      <th>CREATED</th>
+      <th>STATUS</th>
+      <th>PORTS</th>
+      <th>NAMES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>948f234e22a1</td>
+      <td>centos:latest</td>
+      <td>“bash”</td>
+      <td>10 minutes ago</td>
+      <td>Exited (0) 2 minutes ago</td>
+      <td> </td>
+      <td>c1</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ps -a: check all containers including running and stopped
+</code></pre></div></div>
+
+<h3 id="233-docker-inspect">2.3.3 docker inspect</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker run -it --name c2 centos:latest bash
+[root@9f2eea16da4c /]#
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>note:
+use ctrl p+q can exit without terminate the container.
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker inspect c2
+
+"Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "d3de2fdbc30ee36a55c1431ef3ae4578392e552009f00b2019b4720735fe5a60",
+                    "EndpointID": "d1a2b7609f2f73a6cac67229a4395eef293f695c0ac4fd6c9c9e6913c9c85c1c",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:11:00:02",
+                    "DriverOpts": null
+                }
+            }
+        }
+    }
+]
+
+</code></pre></div></div>
+
+<h3 id="234-docker-exec">2.3.4 docker exec</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker exec -it c2 ls /root
+anaconda-ks.cfg  anaconda-post.log  original-ks.cfg
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker exec: execute a command outside the container
+-it: interactive terminal
+</code></pre></div></div>
+
+<h3 id="235-docker-attach">2.3.5 docker attach</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[root@localhost ~]# docker attach c2
+[root@9f2eea16da4c /]#
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker attach is like ssh, allow us to enter in to the container
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>When using `docker attach` to exit a container, if you do not need the container to continue running, you can simply use the `exit` command to terminate the container. However, if you want to keep the container running in the background, you can detach from it without stopping it by pressing `Ctrl + P` followed by `Ctrl + Q`. This will return you to the host shell without terminating the container.
+</code></pre></div></div>
+
+<h3 id="236-docker-stop">2.3.6 docker stop</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE           COMMAND   CREATED          STATUS          PORTS     NAMES
+9f2eea16da4c   centos:latest   "bash"    22 minutes ago   Up 22 minutes             c2
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker stop 9f2eea
+9f2eea
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps -a
+CONTAINER ID   IMAGE           COMMAND                  CREATED          STATUS                       PORTS     NAMES
+9f2eea16da4c   centos:latest   "bash"                   22 minutes ago   Exited (137) 4 seconds ago             c2
+</code></pre></div></div>
+
+<h3 id="237-docker-start">2.3.7 docker start</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps -a
+CONTAINER ID   IMAGE           COMMAND     CREATED          STATUS                       PORTS     NAMES
+9f2eea16da4c   centos:latest   "bash"      22 minutes ago   Exited (137) 4 seconds ago              c2
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker start 9f2eea
+9f2eea
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE           COMMAND   CREATED          STATUS          PORTS     NAMES
+9f2eea16da4c   centos:latest   "bash"    24 minutes ago   Up 16 seconds             c2
+</code></pre></div></div>
+
+<h3 id="238-docker-top">2.3.8 docker top</h3>
+
+<blockquote>
+  <p>in Docker Host, check processes in the container</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker top c2
+UID    PID     PPID      C      STIME        TTY              TIME                CMD
+root  69040   69020      0      18:37       pts/0           00:00:00              bash
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>UID</th>
+      <th>PID</th>
+      <th>PPID</th>
+      <th>C</th>
+      <th>STIME</th>
+      <th>TTY</th>
+      <th>TIME</th>
+      <th>CMD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>root</td>
+      <td>69040</td>
+      <td>69020</td>
+      <td>0</td>
+      <td>18:37</td>
+      <td>pts/0</td>
+      <td>00:00:00</td>
+      <td>bash</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The <code class="language-plaintext highlighter-rouge">docker top</code> command is used to view information about the processes running in a container from the Docker host’s perspective. It allows you to see the list of processes that are running inside the container along with their process IDs (PIDs), and resource utilization statistics such as CPU and memory usage.</p>
+
+<p>On the other hand, <code class="language-plaintext highlighter-rouge">docker exec -it c2 ps -ef</code> command is used to run the <code class="language-plaintext highlighter-rouge">ps -ef</code> command inside the container with ID or name <code class="language-plaintext highlighter-rouge">c2</code>. This command allows you to view the processes running inside the container from within the container itself, rather than from the Docker host’s perspective.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Outputs explanation:
+UID: user id in container
+PID: process id in container
+PPID: parent process id
+C: CPU
+STIME: start time
+TTY: terminal
+TIME: running time
+CMD: executed command
+</code></pre></div></div>
+
+<h3 id="239-docker-rm">2.3.9 docker rm</h3>
+
+<blockquote>
+  <p>If the container is stopped, use this command to delete it directly; if the container is running, you need to shut down the container in advance before deleting the container. The following demonstrates the method of deleting after the container is running and shutting down.</p>
+</blockquote>
+
+<h4 id="2391-specify-the-container-ot-be-removed">2.3.9.1 Specify the container ot be removed</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID   IMAGE           COMMAND   CREATED      STATUS         PORTS     NAMES
+9f2eea16da4c   centos:latest   "bash"    2 days ago   Up 3 seconds             c2
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker stop c2
+or
+# docker stop 9f2eea16da4c
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker rm c2
+or
+# docker rm 9f2eea16da4c
+</code></pre></div></div>
+
+<h4 id="2392-batch-deletion">2.3.9.2 batch deletion</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps -a
+CONTAINER ID   IMAGE           COMMAND          CREATED      STATUS                  PORTS    NAMES
+948f234e22a1   centos:latest   "bash"           2 days ago   Exited (0) 2 days ago            c1
+01cb3e01273c   centos:latest   "bash"           2 days ago   Exited (0) 2 days ago            systemimage1
+46d950fdfb33   nginx:latest    "/docker-ent..." 2 days ago   Exited (0) 2 days ago            upbeat_goldberg
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps --a | awk '{if (NR&gt;=2){print $1}}' | xargs docker rm
+</code></pre></div></div>]]></content><author><name></name></author><category term="Containerize" /><summary type="html"><![CDATA[1. Use docker to run Nginx]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="baizeyu.info/baizeyu.info/assets/images/docker_cmd.png" /><media:content medium="image" url="baizeyu.info/baizeyu.info/assets/images/docker_cmd.png" xmlns:media="http://search.yahoo.com/mrss/" /></entry></feed>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>Key Linux Kernel Technologies Involved in Container Technology</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="1-history-of-container-technology">1. History of Container Technology</h1>
+
+<h2 id="11-1979---chroot">1.1 1979 - chroot</h2>
+
+<ul>
+  <li>The concept of container technology can be traced back to UNIX chroot in 1979.</li>
+  <li>It is a set of “UNIX operating system” designed to change the root directory and other subdirectories to a new location within the file system, only accessible by specific processes.</li>
+  <li>The design purpose of this feature is to provide each process with a set of isolated disk space.</li>
+  <li>It was added to BSD in 1982.</li>
+</ul>
+
+<h2 id="12-2000---freebsd-jails">1.2 2000 - FreeBSD Jails</h2>
+
+<ul>
+  <li>FreeBSD Jails is one of the early container technologies built by Derrick T. Woolworth in the FreeBSD Development Consortium in 2000.</li>
+  <li>It is a set of “operating system” systems similar in positioning to chroot, but includes other process sandboxing mechanisms for isolating file systems, users, networks, and other resources.</li>
+  <li>In this way, it can provide a corresponding IP address for each Jail, customized software package, and even configuration plan.</li>
+</ul>
+
+<h2 id="13-2001---linux-vserver">1.3 2001 - Linux VServer</h2>
+
+<ul>
+  <li>Linux VServer is another type of jail mechanism that can be used to protect the security of resources on various partition resources on the computer system (including file systems, CPU time, network addresses, and memory).</li>
+  <li>Each partition is called a security context, and the virtualized system is called a virtual private server.</li>
+</ul>
+
+<h2 id="14-2004---solaris-container">1.4 2004 - Solaris Container</h2>
+
+<ul>
+  <li>The Solaris Container was born targeting x86 and SPARC system architectures. It initially appeared in the February 2004 Solaris 10 Build 51 beta and was officially launched in the full version of Solaris 10 in 2005.</li>
+  <li>The Solaris Container combines system resource control with boundaries provided by partitions. Each partition runs as a completely isolated virtual server within a single instance of the operating system.</li>
+</ul>
+
+<h2 id="15-2005---openvz">1.5 2005 - OpenVZ</h2>
+
+<ul>
+  <li>OpenVZ is very similar to Solaris Containers and uses a patched Linux kernel to achieve virtualization, isolation, resource management, and checkpoint delivery.</li>
+  <li>Each OpenVZ container has an isolated file system, users and user groups, a process tree, network, devices, and IPC objects.</li>
+</ul>
+
+<h2 id="16-2006---process-container">1.6 2006 - Process Container</h2>
+
+<ul>
+  <li>The Process Container was introduced by Google in 2006 and aims to limit, allocate, and isolate resource usage (including CPU, memory, disk I/O, and network) in a set of processes.</li>
+  <li>It was later renamed Control Groups to avoid conflicts with another term in Linux kernel 2.6.24. This shows Google’s keen insight into the importance of container technology and its outstanding contributions.</li>
+</ul>
+
+<h2 id="17-2007---control-groups">1.7 2007 - Control Groups</h2>
+
+<p>Control Groups, also known as cgroups, were added to the Linux kernel in 2007 by Google.</p>
+
+<h2 id="18-2008---lxc">1.8 2008 - LXC</h2>
+
+<ul>
+  <li>LXC stands for Linux Containers.</li>
+  <li>It is the first complete Linux container management implementation solution.</li>
+  <li>Its functionality is implemented through cgroups and Linux namespaces.</li>
+  <li>LXC is delivered through the liblxc library and provides APIs that can be integrated with Python3, Python2, Lua, Go, Ruby, Haskell, and other languages.</li>
+  <li>Compared to other container technologies, LXC can run on the original Linux kernel without any additional patches.</li>
+</ul>
+
+<h2 id="19-2011---warden">1.9 2011 - Warden</h2>
+
+<ul>
+  <li>Warden was created by CloudFoundry in 2011, using LXC as the initial stage and then replacing it with their own implementation.</li>
+  <li>Unlike LXC, Warden is not tightly coupled with Linux. Instead, it can run on any operating system that can provide multiple isolation environment methods. Warden runs as a background process and provides APIs for container management.</li>
+</ul>
+
+<h2 id="110-2013---lmctfy">1.10 2013 - LMCTFY</h2>
+
+<ul>
+  <li>LMCTFY stands for “Let Me Contain That For You”. It is actually an open-source version of Google’s container technology stack, responsible for providing Linux application containers. In the early stages of the project, Google claimed that it could provide reliable performance, high resource utilization, resource sharing mechanisms, ample room for development, and near-zero additional resource consumption.</li>
+  <li>The first version of lmctfy was officially released in October 2013. Google decided to transform the core concepts and abstraction mechanisms of lmctfy into libcontainer in 2015. After losing its mainstream status, lmctfy has lost all positive development momentum.</li>
+</ul>
+
+<p>The Libcontainer project was originally established by Docker, and is now under the jurisdiction of the Open Container Initiative.</p>
+
+<h2 id="111-2013---docker">1.11 2013 - Docker</h2>
+
+<ul>
+  <li>When Docker was first released in 2013, it was an open-source container management engine based on LXC.</li>
+  <li>It simplified the complex process of creating and using containers with its own command system.</li>
+  <li>As Docker developed further, it began to have more ambitious goals, such as defining a standard for container implementation by abstracting the underlying implementation to the Libcontainer interface. This means that the underlying container implementation has become a variable solution, regardless of whether namespace, cgroups technology, or other solutions such as systemd are used, as long as a set of interfaces defined by Libcontainer is implemented, Docker can run. This also makes it possible for Docker to achieve comprehensive cross-platform support.</li>
+</ul>
+
+<h1 id="2-namespace">2. Namespace</h1>
+
+<h2 id="21-introduction-to-namespaces">2.1 Introduction to NameSpaces</h2>
+
+<ul>
+  <li>
+    <p>Many programming languages ​​include the concept of namespaces, and we can think of namespaces as a kind of encapsulation, which actually achieves code isolation.</p>
+  </li>
+  <li>
+    <p>In the operating system, namespaces provide isolation of system resources, including processes, networks, file systems, etc.</p>
+  </li>
+  <li>
+    <p>In fact, one of the main purposes of implementing namespaces in Linux is to provide lightweight virtualization services, that is, containers. Processes in the same namespace can perceive each other’s changes while knowing nothing about processes in other namespaces. This allows processes in containers to create an illusion that they are in an independent system environment, achieving independence and isolation.</p>
+  </li>
+</ul>
+
+<h2 id="22-classification-of-namespaces-in-linux-system">2.2 Classification of NameSpaces in Linux System</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Namespace Type</th>
+      <th style="text-align: center">Description</th>
+      <th style="text-align: center">Function</th>
+      <th style="text-align: center">Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Process NS</td>
+      <td style="text-align: center">Isolates process IDs</td>
+      <td style="text-align: center">Linux manages process IDs through namespaces, and the same process has different IDs in different namespaces</td>
+      <td style="text-align: center">The process namespace is a parent-child structure, and the child namespace is visible to the parent namespace</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Network NS</td>
+      <td style="text-align: center">Isolates network devices and ports</td>
+      <td style="text-align: center">Network isolation is achieved through network namespaces</td>
+      <td style="text-align: center">Docker uses virtual network devices to connect network devices in different namespaces</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">IPC NS</td>
+      <td style="text-align: center">Isolates interprocess comm.</td>
+      <td style="text-align: center">Inter-process communication methods</td>
+      <td style="text-align: center">PID NS and IPC NS can be combined together, processes in the same IPC namespace can interact with each other, and processes in different namespaces cannot</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Mount NS</td>
+      <td style="text-align: center">Isolates mount points</td>
+      <td style="text-align: center">Isolates file directories</td>
+      <td style="text-align: center">Processes can separate mount points from the system during operation. Using this feature, we can achieve the function of chroot, which is more secure than chroot in terms of security.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">UTS NS</td>
+      <td style="text-align: center">Isolates Hostname and NIS domain</td>
+      <td style="text-align: center">Allows containers to have independent hostnames and domains, making them look like independent hosts</td>
+      <td style="text-align: center">The purpose is to isolate the hostname and network information service (NIS)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">User NS</td>
+      <td style="text-align: center">Isolates user and group IDs</td>
+      <td style="text-align: center">Users on each container are not in the same namespace as those on the host machine.</td>
+      <td style="text-align: center">Like process ID, user ID and group ID are different inside and outside the namespace, and can exist with the same ID in different namespaces.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="23-use-case-of-namespaces">2.3 Use Case of NameSpaces</h2>
+
+<blockquote>
+  <p>Taking net namespace as an example</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>In Linux, the network namespace can be considered as an environment with a separate network stack (network card, routing table, iptables) that is isolated. Network namespaces are often used to isolate network devices and services, and only devices with the same network namespace can see each other.</p>
+  </li>
+  <li>
+    <p>Logically, a network namespace is a copy of the network stack, with its own network devices, routing tables, adjacency tables, Netfilter tables, network sockets, network procfs entries, network sysfs entries, and other network resources.</p>
+  </li>
+  <li>
+    <p>From the system’s point of view, when creating a new process through the clone() system call, passing the flag CLONE_NEWNET will create a brand new network namespace in the new process.</p>
+  </li>
+  <li>
+    <p>From the user’s perspective, we just need to use the tool “ip” (package is iproute2) to create a new persistent network namespace.</p>
+  </li>
+</ul>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/6433fb71cb5aec730fd6f479-4-10-13-33-29.jpg" id="blog-image" width="400" />
+</p>
+
+<h3 id="231-creating-a-net-namespace">2.3.1 Creating a net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Creating a network namespace named bzy
+ip netns add bzy
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View the created network namespaces
+ip netns ls
+
+bzy
+</code></pre></div></div>
+
+<h3 id="232-deleting-a-net-namespace">2.3.2 Deleting a net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Delete the created network namespace
+ip netns delete bzy
+</code></pre></div></div>
+
+<h3 id="233-running-commands-in-the-net-namespace">2.3.3 Running commands in the net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Execute bash command in the network namespace. Use "exit" to exit.
+ip netns exec bzy bash
+</code></pre></div></div>
+
+<h3 id="234-viewing-network-connectivity-nic-commands-in-the-net-namespace">2.3.4 Viewing network connectivity (NIC) commands in the net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View network card information in the network namespace
+ip link
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View in the Linux host system
+ip netns exec bzy ip link list
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+</code></pre></div></div>
+
+<h3 id="235-exiting-current-net-namespace">2.3.5 Exiting current net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Exit the network namespace that has been entered
+exit
+</code></pre></div></div>
+
+<h3 id="236-executing-multiple-commands-in-the-net-namespace">2.3.6 Executing multiple commands in the net namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View the routing table in the network namespace
+route -n
+
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View firewall rules in the network namespace
+iptables -t nat -nL
+
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+</code></pre></div></div>
+
+<h3 id="237-creating-a-virtual-network-card">2.3.7 Creating a virtual network card</h3>
+
+<blockquote>
+  <p>Creating a pair of virtual network cards at the same time.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Create a pair of virtual network cards
+ip link add veth0 type veth peer name veth1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View in the physical host system
+ip a s
+......
+10: veth1@veth0: &lt;BROADCAST,MULTICAST,M-DOWN&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether de:44:f8:b7:12:65 brd ff:ff:ff:ff:ff:ff
+11: veth0@veth1: &lt;BROADCAST,MULTICAST,M-DOWN&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 46:5e:89:8c:cb:b3 brd ff:ff:ff:ff:ff:ff
+</code></pre></div></div>
+
+<h3 id="238-migrating-virtual-network-cards-to-a-namespace">2.3.8 Migrating virtual network cards to a namespace</h3>
+
+<blockquote>
+  <p>Both network cards still belong to the “default” or “global” namespace, just like physical network cards. Move one of the network cards to the bzy namespace.</p>
+</blockquote>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Add the veth1 network card that was created to the bzy network namespace
+ip link set veth1 netns bzy
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Viewing networking interfaces within the namespace in the Linux command line
+ip netns exec bzy ip link
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+10: veth1@if11: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/ether de:44:f8:b7:12:65 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+</code></pre></div></div>
+
+<h3 id="239-migrating-virtual-network-cards-out-of-namespace">2.3.9 Migrating virtual network cards out of namespace</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Delete the veth1 virtual network card from the network namespace in the Linux system command line
+ip netns exec bzy ip link delete veth1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># View results in the Linux system command line
+ip netns exec bzy ip link
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+</code></pre></div></div>
+
+<h3 id="2310-configuring-virtual-network-card-ip-addresses">2.3.10 Configuring virtual network card IP addresses</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Create virtual network cards again, add to the bzy network namespace, and set IP addresses.
+ip link add veth0 type veth peer name veth1
+ip link set veth1 netns bzy
+ip netns exec bzy ip addr add 192.168.50.2/24 dev veth1
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Check network status in the Linux system command line
+ip netns exec bzy ip addr
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+12: veth1@if13: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether fe:20:ac:a8:13:4c brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.50.2/24 scope global veth1
+       valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Start the virtual network card, both veth1 and lo need to be started.
+ip netns exec bzy ip link set veth1 up
+
+ip netns exec bzy ip link set lo up
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Add an IP address to the physical machine veth0
+ip a s
+......
+15: veth0@if14: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group defau
+lt qlen 1000
+    link/ether 2e:b4:40:c8:73:dc brd ff:ff:ff:ff:ff:ff link-netnsid 0
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ip addr add 192.168.50.3/24 dev veth0
+
+ip a s veth0
+15: veth0@if14: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 2e:b4:40:c8:73:dc brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.50.3/24 scope global veth0
+       valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ip link set veth0 up
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Ping veth1 in bzy from the host machine
+ping 192.168.50.2
+
+PING 192.168.50.2 (192.168.50.2) 56(84) bytes of data.
+64 bytes from 192.168.50.2: icmp_seq=1 ttl=64 time=0.102 ms
+64 bytes from 192.168.50.2: icmp_seq=2 ttl=64 time=0.068 ms
+64 bytes from 192.168.50.2: icmp_seq=3 ttl=64 time=0.068 ms
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Ping veth0 on the host machine from veth1 in bzy
+ip netns exec bzy ping 192.168.50.3
+
+PING 192.168.50.3 (192.168.50.3) 56(84) bytes of data.
+64 bytes from 192.168.50.3: icmp_seq=1 ttl=64 time=0.053 ms
+64 bytes from 192.168.50.3: icmp_seq=2 ttl=64 time=0.031 ms
+64 bytes from 192.168.50.3: icmp_seq=3 ttl=64 time=0.029 ms
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># If you need to access other networks on your computer, you can manually add the following default route entry.
+ip netns exec bzy ip route add default via 192.168.50.3
+</code></pre></div></div>
+
+<blockquote>
+  <p>To be able to ping external hosts, you’ll need to set up routing and forwarding.</p>
+</blockquote>
+
+<h1 id="3-cgroups">3. CGroups</h1>
+
+<h2 id="31-introduction-to-cgroups">3.1 Introduction to CGroups</h2>
+
+<ul>
+  <li>Control groups (cgroups) is a mechanism provided by the Linux kernel that allows limiting, tracking, and isolating the physical resources used by process groups. It was born for containers, and without cgroups, there would be no container technology today.</li>
+</ul>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/6433fb71cb5aec730fd6f479-4-10-13-56-41.jpg" id="blog-image" width="400" />
+</p>
+
+<h2 id="32-functions-of-cgroups">3.2 Functions of CGroups</h2>
+
+<ul>
+  <li>Resource limitation: CGroups can limit the total amount of resources used by a process group. For example, setting a limit on the amount of memory an application can use during runtime, once it exceeds this quota, an OOM (Out of Memory) is issued.</li>
+  <li>Priority allocation: By allocating CPU time slices and hard disk IO bandwidth sizes, it actually controls the priority of process execution.</li>
+  <li>Resource accounting: CGroups can be used to track resource usage in the system, such as CPU usage time, memory usage, etc., which is very suitable for billing purposes.</li>
+  <li>Process control: CGroups can execute operations such as suspension and recovery on process groups.</li>
+</ul>
+
+<h2 id="33-cgroups-application-case">3.3 CGroups Application Case</h2>
+
+<h3 id="331-installation-and-starting-services">3.3.1 Installation and Starting Services</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>root@localhost ~]# yum <span class="nt">-y</span> <span class="nb">install </span>libcgroup
+<span class="o">[</span>root@localhost ~]# systemctl start cgconfig.service
+<span class="o">[</span>root@localhost ~]# systemctl <span class="nb">enable </span>cgconfig.service
+</code></pre></div></div>
+
+<h3 id="332-limiting-process-cpu-usage">3.3.2 Limiting Process CPU Usage</h3>
+
+<h4 id="3321-view-cpu-shares">3.3.2.1 View CPU shares</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>View resource control subsystems
+[root@localhost ~]# lssubsys
+cpuset
+cpu,cpuacct
+memory
+devices
+freezer
+net_cls,net_prio
+blkio
+perf_event
+hugetlb
+pids
+
+View the location of the subsystem configuration files
+[root@localhost ~]# ls /sys/fs/cgroup/
+blkio  cpuacct      cpuset   freezer  memory   net_cls,net_prio  perf_event  systemd
+cpu    cpu,cpuacct  devices  hugetlb  net_cls  net_prio          pids
+[root@localhost ~]# ls /sys/fs/cgroup/cpu
+cgroup.clone_children  cpuacct.stat          cpu.cfs_quota_us   cpu.stat
+cgroup.event_control   cpuacct.usage         cpu.rt_period_us   notify_on_release
+cgroup.procs           cpuacct.usage_percpu  cpu.rt_runtime_us  release_agent
+cgroup.sane_behavior   cpu.cfs_period_us     cpu.shares         tasks
+
+View CPU time slices to ensure the total amount of CPU slices obtained by the group.
+[root@localhost ~]# cat /sys/fs/cgroup/cpu/cpu.shares
+1024
+</code></pre></div></div>
+
+<h4 id="3322-create-2-groups-using-the-cpu-subsystem">3.3.2.2 Create 2 groups using the CPU subsystem</h4>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>root@localhost ~]# vim /etc/cgconfig.conf
+group lesscpu <span class="o">{</span>
+	cpu<span class="o">{</span>
+		cpu.shares<span class="o">=</span>200<span class="p">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+group morecpu <span class="o">{</span>
+	cpu<span class="o">{</span>
+		cpu.shares<span class="o">=</span>800<span class="p">;</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+
+<span class="o">[</span>root@localhost ~]# systemctl restart cgconfig
+</code></pre></div></div>
+
+<p>Prepare a script</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/bin/bash
+
+a=1
+while true
+do
+
+        a=$[$a+1]
+done
+
+</code></pre></div></div>
+
+<p>Assign the application that will be run to the specified group (<strong>Please use a single-CPU machine and verify with three terminals</strong>)</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Terminal 1# cgexec <span class="nt">-g</span> cpu:lesscpu sh /tmp/1.sh
+
+Terminal 2# cgexec <span class="nt">-g</span> cpu:morecpu sh /tmp/1.sh
+
+Terminal 3# top
+</code></pre></div></div>
+
+<p><strong>PS: If the host has multiple CPUs, for verification purposes, you can perform the following operation</strong></p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># lscpu</span>
+<span class="c"># echo 0 &gt; /sys/devices/system/cpu/cpu0/online</span>
+<span class="c"># echo 1 &gt; /sys/devices/system/cpu/cpu1/online</span>
+</code></pre></div></div>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

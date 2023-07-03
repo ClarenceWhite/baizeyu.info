@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>Mechanism for persistent storage of container data</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="1-introduction">1. Introduction</h1>
+
+<ul>
+  <li>
+    <p>Persistent storage for physical or virtual machines</p>
+
+    <ul>
+      <li>Since physical or virtual machines already have large-capacity disks, data can be directly stored in the local file system of the physical or virtual machine. Alternatively, additional storage systems such as NFS, GlusterFS, and Ceph can be used to achieve persistent data storage.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Persistent storage for Docker containers</p>
+    <ul>
+      <li>Since Docker containers are generated from container images, whatever files or directories are included in the container image can still be seen after the container is started.</li>
+      <li>As Docker containers are considered “disposable” computing resources, they are not suitable for persistent data storage.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="2-solutions">2. Solutions</h1>
+
+<p>Docker provides three ways to mount data from the host machine into a container:</p>
+
+<ul>
+  <li>docker run -v (‘v’ stands for volume)
+    <ul>
+      <li>Mounts a local directory to the container at runtime.</li>
+    </ul>
+  </li>
+  <li>Volumes
+    <ul>
+      <li>A part of the host file system managed by Docker (/var/lib/docker/volumes).</li>
+      <li>This is the default way that Docker stores data.</li>
+    </ul>
+  </li>
+  <li>Bind mounts
+    <ul>
+      <li>Mounts a file or directory from anywhere on the host machine into the container.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="3-demo">3. Demo</h1>
+
+<h2 id="31-docker-run--v">3.1 docker run -v</h2>
+
+<p>First, let’s create a directory on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir /opt/www
+</code></pre></div></div>
+
+<p>Second, create an index.html inside it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim index.html
+-------------
+This is the local volume of nginx docker container!
+</code></pre></div></div>
+
+<p>Next, start a container based on Nginx image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run --name=nginx-volume -d -v /opt/www:/usr/share/nginx/html nginx
+docker ps
+----------------
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+b22f4de7018f   nginx     "/docker-entrypoint.…"   3 seconds ago   Up 2 seconds   80/tcp    nginx-volume
+</code></pre></div></div>
+
+<p>Then, check the ip address of the container:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ispect b22 | grep IPAddress
+----------------------
+"IPAddress": "172.17.0.2",
+</code></pre></div></div>
+
+<p>Use <code class="language-plaintext highlighter-rouge">curl</code> to get the index page on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.2
+------------------
+This is the local volume of nginx docker container!
+</code></pre></div></div>
+
+<p>Let’s try to change the content of the index file locally?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /opt/www/index.html
+-------------------
+Index file changed for nginx-volume!
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">curl</code> again:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.2
+------------------
+Index file changed for nginx-volume!
+</code></pre></div></div>
+
+<p>What if we change the index file in the container? what will happen to the local file ?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd ~
+
+vim index.html
+-----------------
+Copy an index file from local to container, and check local file.
+
+docker cp index.html nginx-volume:/usr/share/nginx/html/index.html
+----------------
+Successfully copied 2.05kB to nginx-volume:/usr/share/nginx/html/index.html
+
+curl 172.17.0.2
+----------------
+Copy an index file from local to container, and check local file.
+
+cat /opt/www/index.html
+-----------------
+Copy an index file from local to container, and check local file.
+</code></pre></div></div>
+
+<p>Oh! The local file was changed to the one in container.</p>
+
+<p><strong>Note:</strong> If the directory under ‘-v’ option does not exist, it will be automatically created.</p>
+
+<h2 id="32-volumes">3.2 Volumes</h2>
+
+<h3 id="321-create-a-volume">3.2.1 Create a volume</h3>
+
+<p>Create a volume named ‘nginx-vol’:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume create nginx-vol
+------------------
+nginx-vol
+</code></pre></div></div>
+
+<p>All the volumes are under <code class="language-plaintext highlighter-rouge">/var/lib/docker/volumes</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /var/lib/docker/volumes
+-------------------
+backingFsBlockDev  metadata.db  nginx-vol
+</code></pre></div></div>
+
+<p>Or check created volumes using:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume ls
+-----------------
+DRIVER    VOLUME NAME
+local     nginx-vol
+</code></pre></div></div>
+
+<p>It also provides <code class="language-plaintext highlighter-rouge">inspect</code> option:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker volume inspect nginx-vol
+----------------------
+[
+    {
+        "CreatedAt": "2023-04-29T20:21:44+01:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/nginx-vol/_data",
+        "Name": "nginx-vol",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+</code></pre></div></div>
+
+<h3 id="322-use-volume">3.2.2 Use volume</h3>
+
+<p>Let’s start another nginx container using the volume we created just now:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name=nginx-volume2 --mount src=nginx-vol,dst=/usr/share/nginx/html nginx
+</code></pre></div></div>
+
+<p>or</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name-nginx-volume2 -v nginx-vol:/usr/share/nginx/html/ nginx
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker ps
+----------------------
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
+d7fdfbc43579   nginx     "/docker-entrypoint.…"   3 seconds ago    Up 2 seconds    80/tcp    nginx-volume2
+</code></pre></div></div>
+
+<p>Check the volume directory on host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls /var/lib/docker/volumes/nginx-vol/_data/
+----------------------
+50x.html  index.html
+</code></pre></div></div>
+
+<p>Check the index file on host:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat /var/lib/docker/volumes/nginx-vol/_data/index.html
+-------------------
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+&lt;style&gt;
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Welcome to nginx!&lt;/h1&gt;
+&lt;p&gt;If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.&lt;/p&gt;
+
+&lt;p&gt;For online documentation and support please refer to
+&lt;a href="http://nginx.org/"&gt;nginx.org&lt;/a&gt;.&lt;br/&gt;
+Commercial support is available at
+&lt;a href="http://nginx.com/"&gt;nginx.com&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Thank you for using nginx.&lt;/em&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>If we change the index on the host, what will we get from container’s localhost?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "🥹" &gt; /var/lib/docker/volumes/nginx-vol/_data/index.html
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.3
+---------------------------
+🥹
+</code></pre></div></div>
+
+<p>This is what we expected :)</p>
+
+<h2 id="33-bind-mounts">3.3 bind mounts</h2>
+
+<p>bind mounts allows us to bind a point wherever we want on the host machine.</p>
+
+<p>Also, create a dicrectory first:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir /opt/bind_mounts
+</code></pre></div></div>
+
+<p>Start another container:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -d --name=nginx-bind-mounts --mount type=bind,src=/opt/bind_mounts,dst=/usr/share/nginx/html nginx
+</code></pre></div></div>
+
+<p>Create an html file in it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "🤨" &gt; /opt/bind_mounts/index.html
+</code></pre></div></div>
+
+<p>Access the container on host machine:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl 172.17.0.4
+---------------------
+🤨
+</code></pre></div></div>
+
+<p>This chapter is easy!</p>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

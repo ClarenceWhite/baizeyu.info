@@ -1,0 +1,43 @@
+.tech {
+    box-sizing: border-box;
+    margin-top: 3%;
+    max-width: 90% !important;
+    width: 90% !important;
+}
+
+.tech .row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 0 !important;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    width: 90%;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3); /* 调整阴影效果 */
+}
+
+.card-img-top {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    height: auto;
+    object-fit: cover;
+}
+
+.card-body h2 {
+    font-size: 1.5rem;
+}
+
+.card-body p {
+    color: #666;
+}

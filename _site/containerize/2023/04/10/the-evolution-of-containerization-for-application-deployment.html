@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>The Evolution of Containerization for Application Deployment</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="1-pain-points-of-application-deployment">1. Pain Points of Application Deployment</h1>
+
+<h2 id="11-application-deployment-process">1.1 Application Deployment Process</h2>
+
+<p><strong>Example: Deploying a web application developed in the Java programming language using the War package to Tomcat.</strong></p>
+
+<ul>
+  <li>The deployment process is as follows:
+    <ul>
+      <li>Configure the server runtime environment: the Java runtime environment, such as JDK or JRE.</li>
+      <li>Install the Tomcat web middleware on the server to run the War package.</li>
+      <li>Place the corresponding War package for the Java web application in the Tomcat directory.</li>
+      <li>Start the Tomcat application on the server.</li>
+      <li>Optional: Deploy database (MySQL) or caching system (Redis), etc., one by one.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="12-application-scaling">1.2 Application Scaling</h2>
+
+<ul>
+  <li>Involves deploying the same environment on multiple servers.</li>
+  <li>Pain point: redeploying the above environment is time-consuming and costly in terms of labor and resources.</li>
+</ul>
+
+<h2 id="13-multi-environment-application-deployment">1.3 Multi-Environment Application Deployment</h2>
+
+<ul>
+  <li>Environments: Local testing environment, pre-production environment, production environment.</li>
+  <li>A successful test in the local environment may encounter problems in the pre-production environment, or even though both environments are fine, there might be issues in the production environment.</li>
+  <li>Need: One successful deployment that can run everywhere.</li>
+</ul>
+
+<h1 id="2-evolution-of-computing-resources-application">2. Evolution of Computing Resources Application</h1>
+
+<h2 id="21-pain-points-of-physical-server-usage">2.1 Pain Points of Physical Server Usage</h2>
+
+<ul>
+  <li>
+    <p>From the perspective of physical server management:</p>
+
+    <ul>
+      <li>High manpower cost to deploy physical server environment, especially without sufficient automation means, relying on manual operation and maintenance.</li>
+      <li>When a physical server fails, the restart time is too long, ranging from 1-2 minutes to 3-5 minutes, which does not meet the requirement of achieving 99.999999999% uptime for servers.</li>
+      <li>Troubleshooting hardware issues during application runtime on physical servers is complicated.</li>
+      <li>It is difficult to effectively schedule and utilize computational resources on physical servers.</li>
+    </ul>
+  </li>
+  <li>
+    <p>From the perspective of deploying applications on physical servers:</p>
+    <ul>
+      <li>Time is wasted in deploying environments on physical servers without automated management tools.</li>
+      <li>Changing application configurations on physical servers requires repeating the previous steps.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="22-pros-and-cons-of-using-virtual-machines">2.2 Pros and Cons of Using Virtual Machines</h2>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/640a227606c5e77178f39150-4-6-18-40-3.jpg" id="blog-image" height="300" width="400" />
+</p>
+
+<h3 id="221-pros-of-using-virtual-machines">2.2.1 Pros of Using Virtual Machines</h3>
+
+<ul>
+  <li>
+    <p>From the perspective of virtual machine management:</p>
+
+    <ul>
+      <li>Virtual machines are lighter than physical servers and can be quickly generated using virtual machine templates.</li>
+      <li>The deployment of applications in virtual machines is as controllable as physical servers, and when virtual machines fail, new ones can be used directly to replace them.</li>
+      <li>Efficient use of physical server resources by virtual machines.</li>
+      <li>Virtual machines provide isolation similar to physical servers for a good application runtime environment.</li>
+    </ul>
+  </li>
+  <li>
+    <p>From the perspective of deploying applications in virtual machines:</p>
+    <ul>
+      <li>Applications can be easily scaled up or down in virtual machines.</li>
+      <li>Compared to physical servers, when the virtual machine running an application fails, it can be quickly restarted, usually within seconds, and the application can continue to provide services.</li>
+      <li>Easy migration of applications.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="222-cons-of-using-virtual-machines">2.2.2 Cons of Using Virtual Machines</h3>
+
+<ul>
+  <li>Virtual machine management software itself consumes a lot of physical server computing resources. For example, VMware Workstation Pro will take up a large amount of physical server resources, so KVM virtual machines are more commonly used in enterprise applications.</li>
+  <li>The underlying hardware of virtual machines consumes a lot of physical server resources. For example, the virtual machine operating system’s hard disk directly occupies a large amount of physical server hard disk space.</li>
+  <li>Compared to container technology, virtual machine startup time is long, while container startup can be calculated in milliseconds.</li>
+  <li>Virtual machines add a chain of calls for physical server hardware resource allocation, which wastes time and makes virtual machines less performant than physical servers.</li>
+  <li>Since applications are deployed directly on virtual machine hard disks, when migrating applications, the operating system in the virtual machine hard disk needs to be migrated together, resulting in larger migration files, wasting more storage space and consuming more time.</li>
+</ul>
+
+<h2 id="23-pros-and-cons-of-using-containers">2.3 Pros and Cons of Using Containers</h2>
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/640a227606c5e77178f39150-4-6-18-39-21.jpg" id="blog-image" height="300" width="400" />
+</p>
+
+<h3 id="231-pros-of-using-containers">2.3.1 Pros of Using Containers</h3>
+
+<ul>
+  <li>No need to install an operating system in the container, saving a lot of time.</li>
+  <li>Applications can be directly deployed in the container without manually setting up the runtime environment.</li>
+  <li>Container networking is automatically managed for accessing the services provided by applications in the container.</li>
+  <li>Convenient sharing and building of application containers.</li>
+  <li>Millisecond-level startup time.</li>
+  <li>Containers can directly use physical server hardware resources, with high hardware resource utilization and good performance.</li>
+</ul>
+
+<h3 id="232-cons-of-using-containers">2.3.2 Cons of Using Containers</h3>
+
+<p>For those who are accustomed to using physical servers or virtual machines, the controllability of containerization is not strong. The most intuitive example is trying to manage containers in the same way as physical servers or virtual machines. In fact, there are fundamental differences in how containers are managed, and it is best not to manage them that way.</p>
+
+<h1 id="3-what-is-a-container">3. What is a Container?</h1>
+
+<h2 id="31-container-definition">3.1 Container Definition</h2>
+
+<ul>
+  <li>
+    <p>Virtual machine:</p>
+
+    <ul>
+      <li>Uses virtualization technology to package physical server computing resources, providing an environment similar to a physical server for applications.</li>
+      <li>Isolates applications from each other.</li>
+      <li>Provides convenience in deploying and migrating applications using automation technology.</li>
+      <li>Can scale horizontally.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Container:</p>
+
+    <ul>
+      <li>Packages lightweight physical server computing resources, similar to a lightweight virtual machine, to provide a runtime environment for applications.</li>
+      <li>Can achieve high-density deployment in a physical server.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Comparison of Containers and Virtual Machines</p>
+  </li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Attribute</th>
+      <th>Container</th>
+      <th>Virtual Machine</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Isolation</td>
+      <td>Process</td>
+      <td>Full resource</td>
+    </tr>
+    <tr>
+      <td>Startup time</td>
+      <td>Milliseconds or seconds</td>
+      <td>Seconds or minutes</td>
+    </tr>
+    <tr>
+      <td>Kernel</td>
+      <td>Shares host kernel</td>
+      <td>Uses independent kernel</td>
+    </tr>
+    <tr>
+      <td>Resource usage</td>
+      <td>Megabytes</td>
+      <td>Gigabytes</td>
+    </tr>
+    <tr>
+      <td>System support capacity (same level)</td>
+      <td>Supports thousands of containers</td>
+      <td>Supports dozens of virtual machines</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="32-container-functions">3.2 Container Functions</h2>
+
+<ul>
+  <li>Install container management tools such as Docker and Containerd to run applications in a containerized manner.</li>
+  <li>Run applications in their own containers, achieving isolation between applications.</li>
+  <li>The container where the application runs can generate an application template file, called a container image, which is immutable and serves as the foundation for cloud-native infrastructure technologies. It can be run on other physical servers as well.</li>
+</ul>
+
+<h2 id="33-problems-solved-by-containers">3.3 Problems Solved by Containers</h2>
+
+<ul>
+  <li>Rapid delivery and deployment of applications (through images and containers)</li>
+  <li>Efficient utilization and isolation of resources (high-density deployment on physical servers)</li>
+  <li>Convenient migration and scaling (build once, run anywhere)</li>
+</ul>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

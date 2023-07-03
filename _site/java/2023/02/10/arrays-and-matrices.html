@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="/assets/css/navbar.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/home.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/about.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/tech.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/post.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/toc.js"></script>
+
+    <meta charset="utf-8" />
+    <title>Blog | Zeyu (Clarence)</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="navbar-brand" href="/index">
+        <img src="/assets/images/signature_en.png" width="auto" height="60px" class="d-inline-block align-top"
+            alt="brand_logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/about">About</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/tech/">Tech</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/life/">Life</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/reading/">Reading</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/pages/music/">Music</a>
+            </li>
+        </ul>
+    </div>
+</nav> <div class="post">
+    <div class="title">
+        <h1>Arrays and Matrices</h1>
+    </div>
+
+    <div class="content-area">
+        <div id="toc">
+            <div
+                style="color:darkgoldenrod; font-weight:bolder; font-size:1.5rem; text-decoration: underline; margin-bottom: 1.2rem;">
+                OUTLINE</div>
+            <!-- Table of contents will be generated here -->
+        </div>
+        <div class="blog-content">
+            <h1 id="q283-move-zeroes"><a href="https://leetcode.com/problems/move-zeroes/description/">Q283. Move Zeroes</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public void moveZeroes(int[] nums) {
+
+        // An index for non zero numbers
+        int none_zero_index = 0;
+
+        // If we find none-zero values, just put it at index 'none_zero_index'
+        for (int i = 0; i &lt; nums.length; i++) {
+            if (nums[i] != 0) {
+                nums[none_zero_index] = nums[i];
+                none_zero_index ++;
+            }
+        }
+
+        // if none_zero_index is not the same as nums.length, replace rest positions to 0
+        if (none_zero_index != nums.length) {
+            for (int i = none_zero_index; i &lt; nums.length; i++) {
+                nums[i] = 0;
+            }
+        }
+    }
+}
+</code></pre></div></div>
+
+<h1 id="q566-reshape-the-matrix"><a href="https://leetcode.com/problems/reshape-the-matrix/description/">Q566. Reshape the Matrix</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public int[][] matrixReshape(int[][] mat, int r, int c) {
+
+        // get original number of rows and columns
+        int row_original = mat.length;
+        int column_original = mat[0].length;
+        int size_original = row_original * column_original;
+
+        // check if the given size is possible
+        if (size_original != (r*c)) {
+            return mat;
+        }
+
+        // else
+        int[][] result = new int[r][c];
+
+        // loop input matrix to get all numbers
+        int[] all_nums = new int[size_original];
+        int index = 0;
+        for (int i = 0; i &lt; row_original; i++) {
+            for (int j = 0; j &lt; column_original; j++) {
+                int num = mat[i][j];
+                all_nums[index] = num;
+                index ++;
+            }
+        }
+
+        // fill result matrix
+        index = 0;
+        for (int i = 0; i &lt; r; i++) {
+            for (int j = 0; j &lt; c; j++) {
+                result[i][j] = all_nums[index];
+                index ++;
+            }
+        }
+
+        return result;
+
+    }
+}
+</code></pre></div></div>
+
+<h1 id="q485-max-consecutive-ones"><a href="https://leetcode.com/problems/max-consecutive-ones/description/">Q485. Max Consecutive Ones</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public int findMaxConsecutiveOnes(int[] nums) {
+
+        // count
+        int count = 0;
+        List&lt;Integer&gt; max_counts = new ArrayList&lt;&gt;();
+
+        // loop over the array
+        for (int i = 0; i &lt; nums.length; i++) {
+            if (i == nums.length-1 &amp;&amp; nums[i] == 1) {
+                count++;
+                max_counts.add(count);
+                break;
+            }
+            if (nums[i] == 1 &amp;&amp; nums[i+1] == 1) {
+                count++;
+            } else if (nums[i] == 1 &amp;&amp; nums[i+1] != 1) {
+                count++;
+            } else {
+                max_counts.add(count);
+                count = 0;
+                continue;
+            }
+        }
+
+        // get max in the list
+        System.out.println(max_counts);
+        int max = Collections.max(max_counts);
+
+        return max;
+    }
+}
+</code></pre></div></div>
+
+<h1 id="240-search-a-2d-matrix-ii"><a href="https://leetcode.com/problems/search-a-2d-matrix-ii/description/">240. Search a 2D Matrix II</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+
+        // result
+        boolean result = false;
+        // check row by row, if the target is between first and last number
+        for (int i = 0; i &lt; matrix.length; i++) {
+
+            // get row first and last
+            int[] row = matrix[i];
+            int first = row[0];
+            int last = row[row.length-1];
+            if (target &gt;= first &amp;&amp; target &lt;=last) {
+                for (int j = 0; j &lt; row.length; j++) {
+                    if (target == row[j]) {
+                        result = true;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+}
+</code></pre></div></div>
+
+<h1 id="378-kth-smallest-element-in-a-sorted-matrix"><a href="https://leetcode.com/problems/kth-smallest-element-in-a-sorted-matrix/description/">378. Kth Smallest Element in a Sorted Matrix</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public int kthSmallest(int[][] matrix, int k) {
+
+        List&lt;Integer&gt; expanded = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; matrix.length; i++) {
+            for (int j = 0; j &lt; matrix[i].length; j++) {
+                expanded.add(matrix[i][j]);
+            }
+        }
+
+        // sort the list
+        Collections.sort(expanded);
+
+        // return
+        return expanded.get(k-1);
+
+    }
+}
+</code></pre></div></div>
+
+<h1 id="645-set-mismatch"><a href="https://leetcode.com/problems/set-mismatch/description/">645. Set Mismatch</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public int[] findErrorNums(int[] nums) {
+
+        // use a HashSet to find duplicates
+        Set&lt;Integer&gt; nums_set = new HashSet&lt;&gt;();
+
+        // result
+        int dup = 0;
+        int miss = 0;
+
+        // find duplicate
+        for (int i = 0; i &lt; nums.length; i++) {
+            if(nums_set.contains(nums[i])){
+                dup = nums[i];
+            }
+            nums_set.add(nums[i]);
+        }
+
+        // find miss
+        for (int i = 1; i &lt; nums.length+1; i++) {
+            if (!nums_set.contains(i)) {
+                miss = i;
+            }
+        }
+
+        // return
+        return new int[]{dup, miss};
+    }
+}
+</code></pre></div></div>
+
+<h1 id="287-find-the-duplicate-number"><a href="https://leetcode.com/problems/find-the-duplicate-number/description/">287. Find the Duplicate Number</a></h1>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Solution {
+    public int findDuplicate(int[] nums) {
+
+        // use a HashSet
+        Set&lt;Integer&gt; nums_set = new HashSet&lt;&gt;();
+        for (int i = 0; i &lt; nums.length; i++) {
+            if (nums_set.contains(nums[i])) {
+                return nums[i];
+            }
+            nums_set.add(nums[i]);
+        }
+
+        return -1;
+
+    }
+}
+</code></pre></div></div>
+
+        </div>
+    </div>
+</div>
+</body>
+
+</html>
