@@ -36,7 +36,7 @@ subcategories:
                 <img class="card-img-top" src="{{ subcategory.image }}" alt="{{ subcategory.name }} logo">
                 <div class="card-body">
                     <h2>
-                        <a href="/{{ subcategory.name }}">
+                        <a href="/{{ subcategory.name | downcase }}">
                             {{ subcategory.name}}
                         </a>
                     </h2>
