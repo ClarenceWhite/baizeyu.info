@@ -173,3 +173,7 @@
 .toc-link-wrapper a:hover {
     color: inherit;
 }
+
+.highlighter-rouge {
+    margin-top: 0.5rem;
+}
