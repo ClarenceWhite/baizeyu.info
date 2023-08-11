@@ -20,9 +20,6 @@ subcategories:
   - name: Kubernetes
     image: /assets/images/k8s.png
     description: The most widely used app orchestrator...
-  - name: Computer Network
-    image: /assets/images/network.png
-    description: An interesting topic :)
   - name: Certificates
     image: /assets/images/certification.png
     description: Get the most useful certificates and boost your career!
@@ -31,7 +28,7 @@ subcategories:
 <div class="tech container-fluid">
     <div class="row">
         {% for subcategory in page.subcategories %}
-        <div class="col-md-5">
+        <div class="col-md-4">
             <div class="card mb-4 shadow-sm">
                 <img class="card-img-top" src="{{ subcategory.image }}" alt="{{ subcategory.name }} logo">
                 <div class="card-body">

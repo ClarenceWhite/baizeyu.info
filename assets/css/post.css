@@ -88,7 +88,7 @@
 
 /* TOC 样式 */
 .post-toc {
-    min-width: 20%;
+    width: auto;
     max-width: fit-content;
     box-sizing: border-box;
     top: 0;
