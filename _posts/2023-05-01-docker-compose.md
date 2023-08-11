@@ -69,14 +69,14 @@ We are going to follow the official documents (https://docs.docker.com/compose/g
 
 Create a directory for the project:
 
-```
+```bash
 mkdir composetest
 cd composetest
 ```
 
 Create a file called `app.py` in your project directory and paste the following code in:
 
-```
+```bash
 vim app.py
 ----------------
 import time
@@ -105,7 +105,7 @@ def hello():
 
 Create another file called `requirements.txt` in your project directory and paste the following code in:
 
-```
+```bash
 vim requirements.txt
 ----------------------
 flask
@@ -114,7 +114,7 @@ redis
 
 ## 4.2 Create a Dockerfile
 
-```
+```bash
 vim Dockerfile
 --------------------
 # syntax=docker/dockerfile:1
@@ -132,7 +132,7 @@ CMD ["flask", "run"]
 
 ## 4.3 Define services in a Compose file
 
-```
+```bash
 vim docker-compose.yaml
 ------------------------
 version: "3.9"
@@ -147,7 +147,7 @@ services:
 
 ## 4.4 Build and run your app with Compose
 
-```
+```bash
 docker compose up
 -----------------------
 [+] Running 3/1
@@ -174,7 +174,7 @@ composetest-web-1    | Press CTRL+C to quit
 
 Open another terminal and visit:
 
-```
+```bash
 curl localhost:8000
 ---------------------
 Hello World! I have been seen 1 times.
@@ -182,7 +182,7 @@ Hello World! I have been seen 1 times.
 
 Visit again:
 
-```
+```bash
 curl localhost:8000
 --------------------
 Hello World! I have been seen 2 times.
@@ -190,7 +190,7 @@ Hello World! I have been seen 2 times.
 
 Check docker images:
 
-```
+```bash
 docker image ls
 -----------------
 REPOSITORY        TAG       IMAGE ID       CREATED         SIZE

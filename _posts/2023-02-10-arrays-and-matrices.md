@@ -10,7 +10,7 @@ reading_time: 20
 
 # [Q283. Move Zeroes](https://leetcode.com/problems/move-zeroes/description/)
 
-```
+```java
 class Solution {
     public void moveZeroes(int[] nums) {
 
@@ -37,7 +37,7 @@ class Solution {
 
 # [Q566. Reshape the Matrix](https://leetcode.com/problems/reshape-the-matrix/description/)
 
-```
+```java
 class Solution {
     public int[][] matrixReshape(int[][] mat, int r, int c) {
 
@@ -82,7 +82,7 @@ class Solution {
 
 # [Q485. Max Consecutive Ones](https://leetcode.com/problems/max-consecutive-ones/description/)
 
-```
+```java
 class Solution {
     public int findMaxConsecutiveOnes(int[] nums) {
 
@@ -119,7 +119,7 @@ class Solution {
 
 # [240. Search a 2D Matrix II](https://leetcode.com/problems/search-a-2d-matrix-ii/description/)
 
-```
+```java
 class Solution {
     public boolean searchMatrix(int[][] matrix, int target) {
 
@@ -148,7 +148,7 @@ class Solution {
 
 # [378. Kth Smallest Element in a Sorted Matrix](https://leetcode.com/problems/kth-smallest-element-in-a-sorted-matrix/description/)
 
-```
+```java
 class Solution {
     public int kthSmallest(int[][] matrix, int k) {
 
@@ -171,7 +171,7 @@ class Solution {
 
 # [645. Set Mismatch](https://leetcode.com/problems/set-mismatch/description/)
 
-```
+```java
 class Solution {
     public int[] findErrorNums(int[] nums) {
 
@@ -205,7 +205,7 @@ class Solution {
 
 # [287. Find the Duplicate Number](https://leetcode.com/problems/find-the-duplicate-number/description/)
 
-```
+```java
 class Solution {
     public int findDuplicate(int[] nums) {
 

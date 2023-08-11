@@ -14,7 +14,7 @@ reading_time: 20
 
 ### 1.1.1 Use `docker images` command
 
-```
+````bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 bash         latest    5557e073f11c   2 weeks ago    13MB
@@ -24,7 +24,7 @@ centos       latest    5d0da3dc9764   4 months ago   231MB
 
 ### 1.1.2 Use `docker image` command
 
-```
+```bash
 # docker image list (or ls)
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 bash         latest    5557e073f11c   2 weeks ago    13MB
@@ -36,7 +36,7 @@ centos       latest    5d0da3dc9764   4 months ago   231MB
 
 > Considering that Docker container images can take up local storage space, it is recommended to set up other storage systems and mount them locally to solve the problem of consuming a large amount of local storage.
 
-```
+```bash
 # ls /var/lib/docker
 buildkit  containers  image  network  overlay2  plugins  runtimes  swarm  tmp  trust  volumes
 ```
@@ -45,11 +45,11 @@ buildkit  containers  image  network  overlay2  plugins  runtimes  swarm  tmp  t
 
 ### 1.2.1 Command line searching
 
-```
+```bash
 # docker search centos
 ```
 
-```
+```bash
 # Outputs
 NAME                              DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
 centos                            The official build of CentOS.                   6987      [OK]
@@ -64,13 +64,13 @@ Just go to this website and search for the image you want: https://hub.docker.co
 
 ## 1.3 Pull images
 
-```
+```bash
 # docker pull centos
 ```
 
 ## 1.4 Remove images
 
-```
+```bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 bash         latest    5557e073f11c   2 weeks ago    13MB
@@ -78,7 +78,7 @@ nginx        latest    605c77e624dd   3 weeks ago    141MB
 centos       latest    5d0da3dc9764   4 months ago   231MB
 ```
 
-```
+```bash
 # docker rmi centos
 Untagged: centos:latest
 Untagged: centos@sha256:a27fd8080b517143cbbbab9dfb7c8571c40d67d534bbdee55bd6c473f432b177
@@ -88,13 +88,13 @@ Deleted: sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59
 
 or
 
-```
+```bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 centos       latest    5d0da3dc9764   4 months ago   231MB
 ```
 
-```
+```bash
 # docker rmi 5d0da3dc9764
 ```
 
@@ -136,14 +136,14 @@ There are several ways to implement storage drivers for container file systems, 
 
 ### 2.3.2 Check the storage driver of the Docker Host
 
-```
+```bash
 # docker info | grep overlay
  Storage Driver: overlay2
 ```
 
 ### 2.3.3 Layers of images
 
-```
+```bash
 # docker pull nginx
 Using default tag: latest
 latest: Pulling from library/nginx
@@ -162,7 +162,7 @@ We can see that the downloaded image consists of 6 layers. How to find out where
 
 Firstly, check Nginx image:
 
-```
+```bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 nginx        latest    605c77e624dd   3 weeks ago    141MB
@@ -170,7 +170,7 @@ nginx        latest    605c77e624dd   3 weeks ago    141MB
 
 We can find the storage location via the Image ID 605c77e624dd:
 
-```
+```bash
 # ls /var/lib/docker/image/overlay2/
 distribution  imagedb  layerdb  repositories.json
 ```
@@ -183,12 +183,12 @@ This directory is the entry point for the search and is very important. It store
 
 Find the long ID of the image nginx by looking up the repositories.json file using its short ID, and then use the long ID to locate the metadata of this image in the imagedb:
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/repositories.json | grep 605c77e624dd
 {"Repositories":"nginx":{"nginx:latest":"sha256:605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85","nginx@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31":"sha256:605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85"}}}}
-```
+````
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/imagedb/content/sha256/605c77e624ddb75e6110f997c58876baa13f8754486b461117934b24a9dc3a85
 ......
 "os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f","sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8","sha256:b8d6e692a25e11b0d32c5c3dd544b71b1085ddc1fddad08e68cbd7fda7f70221","sha256:f1db227348d0a5e0b99b15a096d930d1a69db7474a1847acbc31f05e4ef8df8c","sha256:32ce5f6a5106cc637d09a98289782edf47c32cb082dc475dd47cbf19a4f866da","sha256:d874fd2bc83bb3322b566df739681fbd2248c58d3369cb25908d68e7ed6040a6"]}}
@@ -198,24 +198,24 @@ Here we keep only the metadata we want, which is `rootfs`. In `rootfs`, we can s
 
 The `layerdb` metadata will provide us with the information we need. By using the base layer diff ID`2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f`, we can find the `cache_id` of the bottom layer image. By using this `cache_id`, we can find the file contents of the image layer.
 
-```
+```bash
 # ls /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
 cache-id  diff  size  tar-split.json.gz
 ```
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f/cache-id
 85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7
 ```
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/layerdb/sha256/2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f/diff
 sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
 ```
 
 Use cacheID to check the content of the file
 
-```
+```bash
 # ls /var/lib/docker/overlay2/85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7
 committed  diff  link
 # ls /var/lib/docker/overlay2/85c4c5ecdac6c0d197f899dac227b9d493911a9a5820eac501bb5e9ae361f4c7/diff
@@ -227,7 +227,7 @@ In the example above, the image metadata and image layer contents are stored sep
 
 After finding the bottom layer of the image, we can proceed to look for the "middle layers" of the image. We found out that there is no image layer with diff ID `e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8` in the `layerdb` directory.
 
-```
+```bash
 # ls /var/lib/docker/image/overlay2/layerdb/sha256/e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8
 ls: error /var/lib/docker/image/overlay2/layerdb/sha256/e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8: no such directory
 ```
@@ -236,34 +236,34 @@ This is because Docker introduced a content-addressable mechanism, which indexes
 
 For the bottom layer of the image, its diff_id is also the chainID. Therefore, we can find the file contents of this layer. For layers other than the bottom layer, the chainID is calculated using the formula chainID(n) = SHA256(chain(n-1) + diffID(n)).
 
-```
+```bash
 # echo -n "sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8" | sha256sum -
 780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5  -
 ```
 
 Find files contents based on the "middle layer" `chainID`:
 
-```
+```bash
 # ls /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5
 cache-id  diff  parent  size  tar-split.json.gz
 ```
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/cache-id
 57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c
 ```
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/diff
 sha256:e379e8aedd4d72bb4c529a4ca07a4e4d230b5a1d3f7a61bc80179e8f02421ad8
 ```
 
-```
+```bash
 # cat /var/lib/docker/image/overlay2/layerdb/sha256/780238f18c540007376dd5e904f583896a69fe620876cabc06977a3af4ba4fb5/parent
 sha256:2edcec3590a4ec7f40cf0743c15d78fb39d8326bc029073b41ef9727da6c851f
 ```
 
-```
+```bash
 Content of the image layer:
 # ls /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c
 committed  diff  link  lower  work
@@ -271,13 +271,13 @@ committed  diff  link  lower  work
 docker-entrypoint.d  etc  lib  tmp  usr  var
 ```
 
-```
+```bash
 short id:
 # cat /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c/link
 24GM2IZVPTUROAG7AWJO5ZWE6B
 ```
 
-```
+```bash
 parent image layer short id:
 # cat /var/lib/docker/overlay2/57e1f1b11e26f748161b7fccbf2ba6b24c2f98dc8a821729f0be215ad267498c/lower
 l/SICZO4QNVZEVOIJ4HDXVDKNYA2
@@ -289,14 +289,14 @@ Once the file contents for the bottom layer and middle layers are found, it beco
 
 Use `docker run` to start an Nginx container
 
-```
+```bash
 # docker run -d nginx:latest
 3272831107a3499afe8160b0cd423e2ac4223522f1995b7be3504a1d3d272878
 # docker ps | grep nginx
 3272831107a3   nginx:latest   "/docker-entrypoint.…"   11 seconds ago   Up 9 seconds   80/tcp    angry_beaver
 ```
 
-```
+```bash
 # mount | grep overlay
 overlay on /var/lib/docker/overlay2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/merged type overlay (rw,relatime,seclabel,lowerdir=/var/lib/docker/overlay2/l/MS2X66BYF6UZ7EKUWMZJKCF4HO:/var/lib/docker/overlay2/l/ODJROQUGY3WQMOGQ3BLYZGIAG4:/var/lib/docker/overlay2/l/Q5LOBFJRH5M7M5CMSWW5L4VYOY:/var/lib/docker/overlay2/l/ZR35FN2E3WEARZV4HLRU373FT7:/var/lib/docker/overlay2/l/NSM2PTAT6TIT2H6G3HFNGZJH5N:/var/lib/docker/overlay2/l/24GM2IZVPTUROAG7AWJO5ZWE6B:/var/lib/docker/overlay2/l/SICZO4QNVZEVOIJ4HDXVDKNYA2,upperdir=/var/lib/docker/overlay2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/diff,workdir=/var/lib/docker/overla 2/b3f5c8b42ac055c715216e376cfe44571f618a876f481533ec1434aa0bc4f8ed/work)
 ```
@@ -310,7 +310,7 @@ We can see that a union file system called overlay is mounted into the container
 
 What needs to be emphasized here is the read-only layer of the lowerdir image of the container. View the short ID of the read-only layer:
 
-```
+```bash
 lowerdir=/var/lib/docker/overlay2/l/MS2X66BYF6UZ7EKUWMZJKCF4HO
 /var/lib/docker/overlay2/l/ODJROQUGY3WQMOGQ3BLYZGIAG4
 /var/lib/docker/overlay2/l/Q5LOBFJRH5M7M5CMSWW5L4VYOY
@@ -323,7 +323,7 @@ lowerdir=/var/lib/docker/overlay2/l/MS2X66BYF6UZ7EKUWMZJKCF4HO
 There are only 6 layers in the mirror layer, but there are 7 short IDs here?
 In the /var/lib/docker/overlay2/l directory we found the answer:
 
-```
+```bash
 # cd /var/lib/docker/overlay2/l
 # pwd
 /var/lib/docker/overlay2/l
@@ -335,7 +335,7 @@ In the /var/lib/docker/overlay2/l directory we found the answer:
 BQENAYC44O2ZCZFT5URMH5OADK  Q5LOBFJRH5M7M5CMSWW5L4VYOY
 ```
 
-```
+```bash
 # ls -l MS2X66BYF6UZ7EKUWMZJKCF4HO/
 Total usage 0
 drwxr-xr-x. 4 root root 43 1月  25 01:27 dev
@@ -400,7 +400,7 @@ Here are a few cases to test:
 
 We simply build a scenario where neither the read-write layer nor the read-only layer exists:
 
-```
+```bash
 # docker run -it centos:latest bash
 [root@355e99982248 /]# touch bzy.txt
 [root@355e99982248 /]# ls
@@ -410,7 +410,7 @@ dev  home  lib64  media       bzy.txt  proc  run   srv   tmp  var
 
 Check whether the file exists in the read-write layer:
 
-```
+```bash
 Check the image for changes
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
@@ -477,22 +477,22 @@ Yes. Docker implements image building through commit and build operations. commi
 
 Use commit to submit the container in the previous section as an image:
 
-```
+```bash
 [root@355e99982248 /]#   ctrl+p+q
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE           COMMAND                  CREATED          STATUS          PORTS     NAMES
 355e99982248   centos:latest   "bash"                   21 minutes ago   Up 21 minutes             fervent_perlman
 ```
 
-```
+```bash
 # docker commit 355e99982248
 sha256:8965dcf23201ed42d4904e2f10854d301ad93b34bea73f384440692e006943de
 ```
 
-```
+```bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
 <none>       <none>    8965dcf23201   About a minute ago   231MB
@@ -500,7 +500,7 @@ REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
 
 The image short ID 8965dcf23201 is the image submitted by the container, check the imagedb metadata of the image:
 
-```
+```bash
 # cat  /var/lib/docker/image/overlay2/imagedb/content/sha256/8965dcf23201ed42d4904e2f10854d301ad93b34bea73f384440692e006943de
 ......
 "os":"linux","rootfs":{"type":"layers","diff_ids":["sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59","sha256:551c3089b186b4027e949910981ff1ba54114610f2aab9359d28694c18b0203b"]}}
@@ -508,12 +508,12 @@ The image short ID 8965dcf23201 is the image submitted by the container, check t
 
 It can be seen that the diff_id of the first mirror layer from top to bottom of the mirror layer is the same as the diff_id of the centos mirror layer, indicating that each mirror layer can be shared by multiple mirrors. And the extra layer of mirror layer content is the content we wrote to the file in the previous section:
 
-```
+```bash
 # echo -n "sha256:74ddd0ec08fa43d09f32636ba91a0a3053b02cb4627c35051aff89f853606b59 sha256:551c3089b186b4027e949910981ff1ba54114610f2aab9359d28694c18b0203b" | sha256sum -
 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b  -
 ```
 
-```
+```bash
 # cd /var/lib/docker/image/overlay2/layerdb/sha256/92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b
 [root@192 92f7208b1cc0b5cc8fe214a4b0178aa4962b58af8ec535ee7211f335b1e0ed3b]# ls
 cache-id  diff  parent  size  tar-split.json.gz
@@ -537,11 +537,11 @@ bzy.txt
 
 > Export container images for easy sharing.
 
-```
+```bash
 # docker save -o centos.tar centos:latest
 ```
 
-```
+```bash
 # ls
 
 centos.tar
@@ -551,7 +551,7 @@ centos.tar
 
 > Import the container image shared by others to the local, which is usually one of the container image distribution methods.
 
-```
+```bash
 # docker load -i centos.tar
 ```
 
@@ -559,17 +559,17 @@ centos.tar
 
 > Export the running container.
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE           COMMAND                  CREATED       STATUS       PORTS     NAMES
 355e99982248   centos:latest   "bash"                   7 hours ago   Up 7 hours             fervent_perlman
 ```
 
-```
+```bash
 # docker export -o centos7.tar 355e99982248
 ```
 
-```
+```bash
 # ls
 centos7.tar
 ```
@@ -578,16 +578,16 @@ centos7.tar
 
 > Import the container exported using docker export as a local container image.
 
-```
+```bash
 # ls
 centos7.tar
 ```
 
-```
+```bash
 # docker import centos7.tar centos7:v1
 ```
 
-```
+```bash
 # docker images
 REPOSITORY   TAG       IMAGE ID       CREATED              SIZE
 centos7      v1        3639f9a13231   17 seconds ago       231MB

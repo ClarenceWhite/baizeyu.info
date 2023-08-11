@@ -24,14 +24,14 @@ When we are building an application with front-end and back-end separation, our 
 
 First, we gonna export a '.p12' file using "certificate.crt" and "private.key", drag the two files into a folder, open the folder with your terminal, and type:
 
-```
+```bash
 openssl pkcs12 -export -in certificate.crt -inkey private.key \
                -out cert.p12
 ```
 
 Now, if you use the command `ls`, you will see a file named "cert.p12" has been generated. Next, we are going to create a Java Keystore with it:
 
-```
+```bash
 keytool -importkeystore \
 	-destkeystore my_first_keystore.jks -deststoretype pkcs12 -destkeypass [your password] -deststorepass [your password]\
 	-srckeystore cert.p12 -srcstoretype pkcs12 -srcstorepass [your password]
@@ -44,7 +44,7 @@ OK, if the second step succeeds, you could see the keystore file named `my_first
 -   Drag your `my_first_keystore.jks` into `/src/main/resources` folder
 -   Create an `application.properties` config file in the same folder, and add the following configuration in it:
 
-```
+```yaml
 #SSL for SpringBoot Application
 server.ssl.key-store=classpath:my_first_keystore.jks
 server.ssl.key-store-type=pkcs12

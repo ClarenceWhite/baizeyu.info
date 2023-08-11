@@ -36,13 +36,13 @@ Docker provides three ways to mount data from the host machine into a container:
 
 First, let's create a directory on host:
 
-```
+```bash
 mkdir /opt/www
 ```
 
 Second, create an index.html inside it:
 
-```
+```bash
 vim index.html
 -------------
 This is the local volume of nginx docker container!
@@ -50,7 +50,7 @@ This is the local volume of nginx docker container!
 
 Next, start a container based on Nginx image:
 
-```
+```bash
 docker run --name=nginx-volume -d -v /opt/www:/usr/share/nginx/html nginx
 docker ps
 ----------------
@@ -60,7 +60,7 @@ b22f4de7018f   nginx     "/docker-entrypoint.…"   3 seconds ago   Up 2 seconds
 
 Then, check the ip address of the container:
 
-```
+```bash
 docker ispect b22 | grep IPAddress
 ----------------------
 "IPAddress": "172.17.0.2",
@@ -68,7 +68,7 @@ docker ispect b22 | grep IPAddress
 
 Use `curl` to get the index page on host:
 
-```
+```bash
 curl 172.17.0.2
 ------------------
 This is the local volume of nginx docker container!
@@ -76,7 +76,7 @@ This is the local volume of nginx docker container!
 
 Let's try to change the content of the index file locally?
 
-```
+```bash
 vim /opt/www/index.html
 -------------------
 Index file changed for nginx-volume!
@@ -84,7 +84,7 @@ Index file changed for nginx-volume!
 
 `curl` again:
 
-```
+```bash
 curl 172.17.0.2
 ------------------
 Index file changed for nginx-volume!
@@ -92,7 +92,7 @@ Index file changed for nginx-volume!
 
 What if we change the index file in the container? what will happen to the local file ?
 
-```
+```bash
 cd ~
 
 vim index.html
@@ -122,7 +122,7 @@ Oh! The local file was changed to the one in container.
 
 Create a volume named 'nginx-vol':
 
-```
+```bash
 docker volume create nginx-vol
 ------------------
 nginx-vol
@@ -130,7 +130,7 @@ nginx-vol
 
 All the volumes are under `/var/lib/docker/volumes`:
 
-```
+```bash
 ls /var/lib/docker/volumes
 -------------------
 backingFsBlockDev  metadata.db  nginx-vol
@@ -138,7 +138,7 @@ backingFsBlockDev  metadata.db  nginx-vol
 
 Or check created volumes using:
 
-```
+```bash
 docker volume ls
 -----------------
 DRIVER    VOLUME NAME
@@ -147,7 +147,7 @@ local     nginx-vol
 
 It also provides `inspect` option:
 
-```
+```bash
 docker volume inspect nginx-vol
 ----------------------
 [
@@ -167,17 +167,17 @@ docker volume inspect nginx-vol
 
 Let's start another nginx container using the volume we created just now:
 
-```
+```bash
 docker run -d --name=nginx-volume2 --mount src=nginx-vol,dst=/usr/share/nginx/html nginx
 ```
 
 or
 
-```
+```bash
 docker run -d --name-nginx-volume2 -v nginx-vol:/usr/share/nginx/html/ nginx
 ```
 
-```
+```bash
 docker ps
 ----------------------
 CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
@@ -186,7 +186,7 @@ d7fdfbc43579   nginx     "/docker-entrypoint.…"   3 seconds ago    Up 2 second
 
 Check the volume directory on host machine:
 
-```
+```bash
 ls /var/lib/docker/volumes/nginx-vol/_data/
 ----------------------
 50x.html  index.html
@@ -194,7 +194,7 @@ ls /var/lib/docker/volumes/nginx-vol/_data/
 
 Check the index file on host:
 
-```
+```bash
 cat /var/lib/docker/volumes/nginx-vol/_data/index.html
 -------------------
 <!DOCTYPE html>
@@ -224,11 +224,11 @@ Commercial support is available at
 
 If we change the index on the host, what will we get from container's localhost?
 
-```
+```bash
 echo "🥹" > /var/lib/docker/volumes/nginx-vol/_data/index.html
 ```
 
-```
+```bash
 curl 172.17.0.3
 ---------------------------
 🥹
@@ -242,25 +242,25 @@ bind mounts allows us to bind a point wherever we want on the host machine.
 
 Also, create a dicrectory first:
 
-```
+```bash
 mkdir /opt/bind_mounts
 ```
 
 Start another container:
 
-```
+```bash
 docker run -d --name=nginx-bind-mounts --mount type=bind,src=/opt/bind_mounts,dst=/usr/share/nginx/html nginx
 ```
 
 Create an html file in it:
 
-```
+```bash
 echo "🤨" > /opt/bind_mounts/index.html
 ```
 
 Access the container on host machine:
 
-```
+```bash
 curl 172.17.0.4
 ---------------------
 🤨

@@ -113,12 +113,12 @@ src="https://raw.githubusercontent.com/ClarenceWhite/BlogImage/main/images/6433f
 
 ### 2.3.1 Creating a net namespace
 
-```
+```bash
 # Creating a network namespace named bzy
 ip netns add bzy
 ```
 
-```
+```bash
 # View the created network namespaces
 ip netns ls
 
@@ -127,28 +127,28 @@ bzy
 
 ### 2.3.2 Deleting a net namespace
 
-```
+```bash
 # Delete the created network namespace
 ip netns delete bzy
 ```
 
 ### 2.3.3 Running commands in the net namespace
 
-```
+```bash
 # Execute bash command in the network namespace. Use "exit" to exit.
 ip netns exec bzy bash
 ```
 
 ### 2.3.4 Viewing network connectivity (NIC) commands in the net namespace
 
-```
+```bash
 # View network card information in the network namespace
 ip link
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 ```
 
-```
+```bash
 # View in the Linux host system
 ip netns exec bzy ip link list
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
@@ -157,14 +157,14 @@ ip netns exec bzy ip link list
 
 ### 2.3.5 Exiting current net namespace
 
-```
+```bash
 # Exit the network namespace that has been entered
 exit
 ```
 
 ### 2.3.6 Executing multiple commands in the net namespace
 
-```
+```bash
 # View the routing table in the network namespace
 route -n
 
@@ -172,7 +172,7 @@ Kernel IP routing table
 Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 ```
 
-```
+```bash
 # View firewall rules in the network namespace
 iptables -t nat -nL
 
@@ -193,12 +193,12 @@ target     prot opt source               destination
 
 > Creating a pair of virtual network cards at the same time.
 
-```
+```bash
 # Create a pair of virtual network cards
 ip link add veth0 type veth peer name veth1
 ```
 
-```
+```bash
 # View in the physical host system
 ip a s
 ......
@@ -212,12 +212,12 @@ ip a s
 
 > Both network cards still belong to the "default" or "global" namespace, just like physical network cards. Move one of the network cards to the bzy namespace.
 
-```
+```bash
 # Add the veth1 network card that was created to the bzy network namespace
 ip link set veth1 netns bzy
 ```
 
-```
+```bash
 # Viewing networking interfaces within the namespace in the Linux command line
 ip netns exec bzy ip link
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
@@ -228,12 +228,12 @@ ip netns exec bzy ip link
 
 ### 2.3.9 Migrating virtual network cards out of namespace
 
-```
+```bash
 # Delete the veth1 virtual network card from the network namespace in the Linux system command line
 ip netns exec bzy ip link delete veth1
 ```
 
-```
+```bash
 # View results in the Linux system command line
 ip netns exec bzy ip link
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
@@ -242,14 +242,14 @@ ip netns exec bzy ip link
 
 ### 2.3.10 Configuring virtual network card IP addresses
 
-```
+```bash
 # Create virtual network cards again, add to the bzy network namespace, and set IP addresses.
 ip link add veth0 type veth peer name veth1
 ip link set veth1 netns bzy
 ip netns exec bzy ip addr add 192.168.50.2/24 dev veth1
 ```
 
-```
+```bash
 # Check network status in the Linux system command line
 ip netns exec bzy ip addr
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
@@ -260,14 +260,14 @@ ip netns exec bzy ip addr
        valid_lft forever preferred_lft forever
 ```
 
-```
+```bash
 # Start the virtual network card, both veth1 and lo need to be started.
 ip netns exec bzy ip link set veth1 up
 
 ip netns exec bzy ip link set lo up
 ```
 
-```
+```bash
 # Add an IP address to the physical machine veth0
 ip a s
 ......
@@ -276,7 +276,7 @@ lt qlen 1000
     link/ether 2e:b4:40:c8:73:dc brd ff:ff:ff:ff:ff:ff link-netnsid 0
 ```
 
-```
+```bash
 ip addr add 192.168.50.3/24 dev veth0
 
 ip a s veth0
@@ -286,11 +286,11 @@ ip a s veth0
        valid_lft forever preferred_lft forever
 ```
 
-```
+```bash
 ip link set veth0 up
 ```
 
-```
+```bash
 # Ping veth1 in bzy from the host machine
 ping 192.168.50.2
 
@@ -300,7 +300,7 @@ PING 192.168.50.2 (192.168.50.2) 56(84) bytes of data.
 64 bytes from 192.168.50.2: icmp_seq=3 ttl=64 time=0.068 ms
 ```
 
-```
+```bash
 # Ping veth0 on the host machine from veth1 in bzy
 ip netns exec bzy ping 192.168.50.3
 
@@ -310,7 +310,7 @@ PING 192.168.50.3 (192.168.50.3) 56(84) bytes of data.
 64 bytes from 192.168.50.3: icmp_seq=3 ttl=64 time=0.029 ms
 ```
 
-```
+```bash
 # If you need to access other networks on your computer, you can manually add the following default route entry.
 ip netns exec bzy ip route add default via 192.168.50.3
 ```
@@ -338,7 +338,7 @@ ip netns exec bzy ip route add default via 192.168.50.3
 
 ### 3.3.1 Installation and Starting Services
 
-```shell
+```bash
 [root@localhost ~]# yum -y install libcgroup
 [root@localhost ~]# systemctl start cgconfig.service
 [root@localhost ~]# systemctl enable cgconfig.service
@@ -348,7 +348,7 @@ ip netns exec bzy ip route add default via 192.168.50.3
 
 #### 3.3.2.1 View CPU shares
 
-```
+```bash
 View resource control subsystems
 [root@localhost ~]# lssubsys
 cpuset
@@ -379,7 +379,7 @@ View CPU time slices to ensure the total amount of CPU slices obtained by the gr
 
 #### 3.3.2.2 Create 2 groups using the CPU subsystem
 
-```shell
+```bash
 [root@localhost ~]# vim /etc/cgconfig.conf
 group lesscpu {
 	cpu{
@@ -397,7 +397,7 @@ group morecpu {
 
 Prepare a script
 
-```
+```bash
 #!/bin/bash
 
 a=1
@@ -411,7 +411,7 @@ done
 
 Assign the application that will be run to the specified group (**Please use a single-CPU machine and verify with three terminals**)
 
-```shell
+```bash
 Terminal 1# cgexec -g cpu:lesscpu sh /tmp/1.sh
 
 Terminal 2# cgexec -g cpu:morecpu sh /tmp/1.sh
@@ -421,7 +421,7 @@ Terminal 3# top
 
 **PS: If the host has multiple CPUs, for verification purposes, you can perform the following operation**
 
-```shell
+```bash
 # lscpu
 # echo 0 > /sys/devices/system/cpu/cpu0/online
 # echo 1 > /sys/devices/system/cpu/cpu1/online

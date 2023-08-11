@@ -45,13 +45,13 @@ Speaking of containers managed by Docker, we have to mention container images be
 
 ### 4.1.1 Run a container firstly
 
-```
+```bash
 docker run -it ubuntu
 ```
 
 ### 4.1.2 Install an app in the container
 
-```
+```bash
 apt-get update -y && \
 apt-get install apache2 -y && \
 apt-get install systemctl && \
@@ -63,18 +63,18 @@ Please use `curl localhost` to verify whether the apache2 http server is running
 
 ### 4.1.3 Make it into an image
 
-```
+```bash
 root@master-01:~# docker ps
 CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS         PORTS                                   NAMES
 a83d4a14e3c6   ubuntu            "/bin/bash"              30 minutes ago   Up 3 minutes                                           brave_leakey
 ```
 
-```
+```bash
 docker commit -a "Clarence" a83d4a14e3c6 ubuntu-apache2:v1
 # sha256:dbc4bd399ef0c4e7c50425ff9de73711e121bbdf14cd960ed181ff62d90ea1bd
 ```
 
-```
+```bash
 root@master-01:~# docker image ls
 REPOSITORY       TAG       IMAGE ID       CREATED         SIZE
 ubuntu-apache2   v1        a86e18671cbb   3 seconds ago   242MB
@@ -115,7 +115,7 @@ The FROM instruction must be the first line in the Dockerfile.
 
 The base image specified by the FROM instruction can be from the official remote repository, or it can be in the local repository, with priority given to the local repository.
 
-```
+```dockerfile
 format: FROM <image>:<tag>
 e.g.: FROM ubuntu:latest
 ```
@@ -126,21 +126,21 @@ e.g.: FROM ubuntu:latest
 
 -   shell format
 
-```
+```dockerfile
 format: RUN <commands>
 e.g.: RUN echo 'hello world' > /var/www/html/index.html
 ```
 
 -   exec format
 
-```
+```dockerfile
 format: RUN ["executable file", "arg1", "arg2"]
 e.g.: RUN ["/bin/bash", "-c", "echo 'hello' > /var/www/html/index.html"]
 ```
 
 **Note:** From an optimization perspective, when there are multiple commands to be executed, do not use multiple RUN instructions. Instead, try to use the && and \ symbols to connect them into one line, because using multiple RUN instructions will create multiple layers in the image.
 
-```
+```dockerfile
 RUN yum install httpd httpd-devel -y
 RUN echo test > /var/www/html/index.html
 
@@ -156,7 +156,7 @@ RUN yum install httpd httpd-devel -y  \
 
 CMD is different from RUN. CMD is used to specify the command to be executed when the container starts, while RUN is used to specify the command to be executed during image building.
 
-```
+```dockerfile
 There are 3 formats of CMD:
 CMD ["executable","param1","param2"]
 CMD ["param1","param2"]
@@ -174,7 +174,7 @@ What is command to run when starting a container?
 
 The EXPOSE instruction is used to specify the port that the container will listen on during runtime.
 
-```
+```dockerfile
 format: EXPOSE <port> [<port>...]
 e.g.: EXPOSE 80 3306 8080
 ```
@@ -185,7 +185,7 @@ The port mentioned above needs to be mapped to the host port using the -p parame
 
 The ENV instruction is used to specify an environment variable.
 
-```
+```dockerfile
 format: ENV <key> <value> or ENV <key>=<value>
 e.g.: ENV JAVA_HOME=/usr/local/jdkxxxx/
 ```
@@ -194,7 +194,7 @@ e.g.: ENV JAVA_HOME=/usr/local/jdkxxxx/
 
 The ADD instruction is used to copy files from the host machine to the image.
 
-```
+```dockerfile
 format: ADD <src> <dest>
 The <src> can be a local file or directory, a compressed file, or a URL. If <src> is a URL, then ADD works similarly to the wget command.
 
@@ -205,7 +205,7 @@ The <dest> path can be an absolute path within the container, or a relative path
 
 The COPY instruction is similar to the ADD instruction, but the source files for COPY can only be local files.
 
-```
+```dockerfile
 format: COPY <src> <dest>
 ```
 
@@ -219,7 +219,7 @@ Only one instruction should be written per Dockerfile. If multiple instructions 
 Differences:
 If the user specifies a command to run when starting the container, the specified command will not override the ENTRYPOINT instruction, but it will override the CMD instruction.
 
-```
+```dockerfile
 There are two formats:
 ENTRYPOINT ["executable", "param1", "param2"]
 ENTRYPOINT command param1 param2
@@ -231,7 +231,7 @@ The VOLUME instruction is used to map a directory on the host machine to a direc
 
 When only specifying the mount point in the VOLUME instruction, Docker will create a new volume for the container, and the directory on the host machine that corresponds to the volume will be automatically generated.
 
-```
+```dockerfile
 format: VOLUME ["<mountpoint>"]
 ```
 
@@ -239,7 +239,7 @@ format: VOLUME ["<mountpoint>"]
 
 The USER instruction sets the user who starts the container (such as Hadoop requires Hadoop user operation, Oracle requires Oracle user operation), and can be either a username or UID.
 
-```
+```dockerfile
 USER daemon
 USER 1001
 ```
@@ -250,7 +250,7 @@ USER 1001
 
 The WORKDIR instruction sets the working directory, similar to the cd command. It is not recommended to use `RUN cd /root`; instead, it is recommended to use the WORKDIR instruction.
 
-```
+```dockerfile
 WORKDIR /root
 ```
 
@@ -258,20 +258,20 @@ WORKDIR /root
 
 Let's make a directory first:
 
-```
+```bash
 mkdir nginx-image-make
 cd nginx-image-make/
 ```
 
 Make an html file:
 
-```
+```bash
 echo "I am building an nginx image..." > index.html
 ```
 
 Make a Dockerfile:
 
-```
+```bash
 vim Dockerfile
 --------------------------
 # base image
@@ -292,13 +292,13 @@ CMD /usr/sbin/nginx
 
 Build the image using Dockerfile:
 
-```
+```bash
 docker build -t ubuntu-nginx:v1 .
 ```
 
 Check the image we built just now:
 
-```
+```bash
 docker image ls
 
 REPOSITORY       TAG       IMAGE ID       CREATED        SIZE
@@ -307,7 +307,7 @@ ubuntu-nginx     v1        d8e8e2e8b89d   15 hours ago   163MB
 
 Run the image as a container and check the default html page:
 
-```
+```bash
 docker run ubuntu-nginx:v1 -d -p 9000:80
 
 docker ps
@@ -328,7 +328,7 @@ In a Dockerfile, there are multiple types of instructions. Among them, the RUN c
 
 **Bad version:**
 
-```
+```dockerfile
 FROM centos:latest
 RUN yum install epel-release -y
 RUN yum install -y gcc gcc-c++ make -y
@@ -344,7 +344,7 @@ CMD ["php-fpm"]
 
 **Better version:**
 
-```
+```dockerfile
 FROM centos:latest
 RUN yum install epel-release -y && \
     yum install -y gcc gcc-c++ make
@@ -363,7 +363,7 @@ CMD ["php-fpm"]
 -   When using the RUN command in a Dockerfile, every time a new layer is created. If files are not deleted in the same layer where they were created, they will be carried on to another layer regardless of whether they are ultimately deleted or not. Therefore, it's important to clean up any residual data in each layer to minimize the size of the image.
 -   Additionally, it's recommended to delete the application software packages used during the container image generation process.
 
-```
+```dockerfile
 FROM centos:latest
 
 RUN yum install epel-release -y && \
@@ -390,7 +390,7 @@ Both methods make the process of creating an image more complex and can result i
 
 An example:
 
-```
+```dockerfile
 FROM maven AS build
 ADD ./pom.xml pom.xml
 ADD ./src src/

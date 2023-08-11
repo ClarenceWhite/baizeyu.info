@@ -27,11 +27,11 @@ https://hub.docker.com/_/tomcat
 
 ### 3.1.1 Without port exposure
 
-```
+```bash
 # docker run -d --rm tomcat:9.0
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE        COMMAND                  CREATED             STATUS             PORTS                                                  NAMES
 c20a0e781246   tomcat:9.0   "catalina.sh run"        27 seconds ago      Up 25 seconds      8080/tcp                                               heuristic_cori
@@ -39,12 +39,12 @@ c20a0e781246   tomcat:9.0   "catalina.sh run"        27 seconds ago      Up 25 s
 
 ### 3.1.2 With port exposure
 
-```
+```bash
 # docker run -d -p 8080:8080 --rm tomcat:9.0
 2fcf5762314373c824928490b871138a01a94abedd7e6814ad5f361d09fbe1de
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE        COMMAND                  CREATED             STATUS             PORTS                                                  NAMES
 2fcf57623143   tomcat:9.0   "catalina.sh run"        3 seconds ago       Up 1 second        0.0.0.0:8080->8080/tcp, :::8080->8080/tcp              eloquent_chatelet
@@ -54,26 +54,26 @@ Then you can go to localhost:8080.
 
 ### 3.1.3 Port exposure and add a static file
 
-```
+```bash
 docker run -d -p 8081:8080 -v /opt/tomcat-server:/usr/local/tomcat/webapps/ROOT tomcat:9.0
 
 # f456e705d48fc603b7243a435f0edd6284558c194e105d87befff2dccddc0b63
 ```
 
-```
+```bash
 # docker ps
 
 CONTAINER ID   IMAGE        COMMAND             CREATED         STATUS         PORTS                                       NAMES
 f456e705d48f   tomcat:9.0   "catalina.sh run"   3 seconds ago   Up 2 seconds   0.0.0.0:8081->8080/tcp, :::8081->8080/tcp   cool_germain
 ```
 
-```
+```bash
 # echo "tomcat running" > /opt/tomcat-server/index.html
 ```
 
 **Access on localhost**
 
-```
+```bash
 root@master-01:~# curl localhost:8081
 
 tom cat running
@@ -83,20 +83,20 @@ tom cat running
 
 ## 4.1 Single Node MySQL Deployment
 
-```
+```bash
 # docker run -p 3306:3306 --name=mysql-container \
 -e MYSQL_ROOT_PASSWORD=your_password \
 -e MYSQL_DATABASE=your_database \
 -d mysql
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                 NAMES
 6f0303faae0c   mysql     "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes   3306/tcp, 33060/tcp   mysql-container
 ```
 
-```
+```bash
 Access via client inside container
 # docker exec -it mysql-container mysql -u root -p
 Enter password: your_password
@@ -119,7 +119,7 @@ mysql>
 
 ### 4.2.1 Master Node
 
-```
+```bash
 docker run -p 3306:3306 --name=mysql-master \
 -e MYSQL_ROOT_PASSWORD=root \
 -e MYSQL_DATABASE=your_database \
@@ -128,19 +128,19 @@ docker run -p 3306:3306 --name=mysql-master \
 -d mysql
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                                  NAMES
 024f3008ec0e   mysql     "docker-entrypoint.s…"   3 seconds ago   Up 2 seconds   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   mysql-master
 ```
 
-```
+```bash
 docker cp mysql-master:/etc/my.cnf /opt/mysql_master/config/my.cnf
 ```
 
 ### 4.2.2 Master Node Config File
 
-```
+```bash
 vim /opt/mysql_master/config/my.cnf
 
 # For advice on how to change settings please see
@@ -195,18 +195,18 @@ socket=/var/run/mysqld/mysqld.sock
 !includedir /etc/mysql/conf.d/
 ```
 
-```
+```bash
 docker cp /opt/mysql_master/config/my.cnf mysql-master:/etc/my.cnf
 docker restart mysql-master
 ```
 
-```
+```bash
 docker exec -it mysql-master mysql -u root -p
 ```
 
 ### 4.2.3 Slave Node
 
-```
+```bash
 docker run -p 3307:3306 --name mysql-slave \
 -e MYSQL_ROOT_PASSWORD=root \
 -e MYSQL_DATABASE=your_database \
@@ -215,20 +215,20 @@ docker run -p 3307:3306 --name mysql-slave \
 -d --link mysql-master:mysql-master mysql
 ```
 
-```
+```bash
 # docker ps
 CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
 f880333ee83b   mysql     "docker-entrypoint.s…"   22 minutes ago   Up 4 minutes    33060/tcp, 0.0.0.0:3307->3306/tcp, :::3307->3306/tcp   mysql-slave
 ```
 
-```
+```bash
 mkdir /opt/mysql_slave/config
 docker cp mysql-slave:/etc/my.cnf /opt/mysql_slave/config/my.cnf
 ```
 
 ### 4.2.4 Slave Node Config File
 
-```
+```bash
 # vim /opt/mysql_slave/config/my.cnf
 # For advice on how to change settings please see
 # http://dev.mysql.com/doc/refman/8.0/en/server-configuration-defaults.html
@@ -283,22 +283,22 @@ socket=/var/run/mysqld/mysqld.sock
 !includedir /etc/mysql/conf.d/
 ```
 
-```
+```bash
 docker cp /opt/mysql_slave/config/my.cnf mysql-slave:/etc/my.cnf
 docker restart mysql-slave
 ```
 
-```
+```bash
 docker exec -it mysql-slave mysql -u root -p
 ```
 
 ### 4.2.5 Config Master Node
 
-```
+```bash
 docker exec -it mysql-master mysql -u root -p
 ```
 
-```
+```sql
 use mysql;
 # Database changed
 
@@ -323,11 +323,11 @@ Executed_Gtid_Set:
 
 ### 4.2.6 Config Slave Node
 
-```
+```bash
 docker exec -it mysql-slave mysql -u root -p
 ```
 
-```
+```sql
 mysql> change master to
     -> master_host='mysql-master',
     -> master_user='backup',
@@ -409,7 +409,7 @@ Master_SSL_Verify_Server_Cert: No
 
 We are going to add a table in DB 'your_database' on master (we must use this DB, because we only put this DB in the config file for sync):
 
-```
+```bash
 docker exec -it mysql-master mysql -u root -p
 
 mysql> use your_database;
@@ -429,7 +429,7 @@ mysql> show tables ;
 
 Check the sync status on slave node:
 
-```
+```bash
 docker exec -it mysql-slave mysql -u root -p
 
 mysql> use your_database;

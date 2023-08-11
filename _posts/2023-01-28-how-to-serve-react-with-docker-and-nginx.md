@@ -51,7 +51,7 @@ build
 
 Also, at the same level as our 'Dockerfile', under React root folder, we gonna create another file called 'nginx.conf', this file configures the Nginx server:
 
-```shell
+```nginx
 server {
     listen 80;
     server_name baizeyu.info www.baizeyu.info;
@@ -114,7 +114,7 @@ As we can see, we copied 'certificate.crt' and 'private.key' into the image, and
 
 **- Then change nginx.conf as well:**
 
-```shell
+```nginx
 # nginx.conf
 
 server {

@@ -35,13 +35,13 @@ reading_time: 30+
 
 Let's run a container first:
 
-```
+```bash
 docker run -d --name=app1 -p 9000:80 nginx:latest
 ```
 
 On the host ubuntu machine, check the iptables:
 
-```
+```bash
 iptables -t nat -vnL POSTROUTING
 ------------------
 Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
@@ -56,7 +56,7 @@ Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
 
 We now have a container running with its port 80 exposed, also a portforward from host 9000 to it, let's check out the iptables on host machine:
 
-```
+```bash
 iptables -t nat -vnL DOCKER
 ------------
 Chain DOCKER (2 references)
@@ -82,7 +82,7 @@ Chain DOCKER (2 references)
 
 Check current network types in brief:
 
-```
+```bash
 docker network ls
 ------------
 NETWORK ID     NAME      DRIVER    SCOPE
@@ -93,7 +93,7 @@ NETWORK ID     NAME      DRIVER    SCOPE
 
 Inspect network types:
 
-```
+```bash
 docker network inspect bridge
 ----------------
 [
@@ -145,7 +145,7 @@ docker network inspect bridge
 
 Check supported network types by Docker:
 
-```
+```bash
 docker info | grep Network
 -----------
   Network: bridge host ipvlan macvlan null overlay
@@ -157,13 +157,13 @@ docker info | grep Network
 
 Check manual page:
 
-```
+```bash
 docker network create --help
 ```
 
 Let's create a bridge network using name 'mybridge0'
 
-```
+```bash
 docker network create -d bridge --subnet "192.168.100.0/24" --gateway "192.168.100.1" -o com.docker.network.bridge.name=docker1 mybridge0
 -----------------------
 a928733f54ff9d886f97eea8e2e3af024ee354860aa3b53ce478e5bdb015e2b9
@@ -171,7 +171,7 @@ a928733f54ff9d886f97eea8e2e3af024ee354860aa3b53ce478e5bdb015e2b9
 
 Check the network we created just now:
 
-```
+```bash
 docker network ls
 --------------------
 NETWORK ID     NAME        DRIVER    SCOPE
@@ -183,7 +183,7 @@ a928733f54ff   mybridge0   bridge    local
 
 Then check bridge on our host machine:
 
-```
+```bash
 ip a s
 --------------------
 82: docker1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
@@ -194,7 +194,7 @@ ip a s
 
 Next, let's start a container and connect it to the network we created just now:
 
-```
+```bash
 docker run -it --network mybridge0 --rm busybox
 --------------------------
 / # ifconfig
@@ -222,7 +222,7 @@ As we can see, the eth0 address of this container is what we configured in `mybr
 
 Inspect host type:
 
-```
+```bash
 docker network inspect host
 --------------------
 [
@@ -254,7 +254,7 @@ docker network inspect host
 
 Let's create another busybox using `host` network type:
 
-```
+```bash
 docker run -it --network host --rm busybox
 --------------------------
 / # ifconfig
@@ -314,7 +314,7 @@ Wow, this information is exact the same as our host machine.
 
 Inspect none type:
 
-```
+```bash
 docker network inspect none
 -------------------------
 [
@@ -346,7 +346,7 @@ docker network inspect none
 
 Let's test this type of network using busybox container:
 
-```
+```bash
 docker run -it --network none --rm busybox
 -------------------------
 / # ifconfig
@@ -367,7 +367,7 @@ It only has loopback address, nothing more!
 
 Firstly, create a container that uses the default network type `bridge`:
 
-```
+```bash
 docker run -it --name c1 --rm busybox
 ---------------------
 / # ifconfig
@@ -392,7 +392,7 @@ lo        Link encap:Local Loopback
 
 Then create another contianer who will share the same network with c1:
 
-```
+```bash
 docker run -it --name c2 --network container:c1 --rm busybox
 ----------------------
 eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:03
@@ -417,7 +417,7 @@ lo        Link encap:Local Loopback
 Did you see? They have the same network address!
 Let's verify this by starting an httpd service in c2 and access it via c1:
 
-```
+```bash
 / # echo "hello " >> /tmp/index.html
 / # ls /tmp
 ------------
@@ -434,7 +434,7 @@ Proto RefCnt Flags       Type       State         I-Node PID/Program name    Pat
 
 Go back to c1, visit localhost:
 
-```
+```bash
 / # wget localhost
 -----------------
 Connecting to localhost (127.0.0.1:80)
@@ -451,7 +451,7 @@ Cool, we get it from c1!
 
 Finally, let's check if they will share the file system in c1:
 
-```
+```bash
 / # cd /tmp/
 /tmp # ls
 /tmp #
@@ -538,7 +538,7 @@ Here we will use two Fedora Linux machines named with 'node-01' and 'node-02', b
 
 Check firewall status:
 
-```
+```bash
 systemctl status firewalld
 ---------------------
 ○ firewalld.service - firewalld - dynamic firewall daemon
@@ -551,14 +551,14 @@ systemctl status firewalld
 
 If firewall is running on your machine, just run these:
 
-```
+```bash
 systemctl stop firewalld
 systemctl disable firewalld
 ```
 
 Check selinux:
 
-```
+```bash
 sestatus
 -------------------
 SELinux status:                 disabled
@@ -566,7 +566,7 @@ SELinux status:                 disabled
 
 If your SELinux status is active, do this:
 
-```
+```bash
 vim /etc/selinux/config
 --------------------------
 SELINUX=disabled
@@ -576,11 +576,11 @@ Finally, don't forget to reboot!
 
 ### 5.5.1 Configure hostnames
 
-```
+```bash
 hostnamectl set-hostname node1
 ```
 
-```
+```bash
 hostnamectl set-hostname node2
 ```
 
@@ -590,7 +590,7 @@ As I already have ip addresses for both of my machine, so check them with:
 
 (node-01)
 
-```
+```bash
 ifconfig
 ----------------
 enp0s5: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
@@ -615,7 +615,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 (node-02)
 
-```
+```bash
 enp0s5: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         inet 10.211.55.11  netmask 255.255.255.0  broadcast 10.211.55.255
         inet6 fdb2:2c26:f4e4:0:21c:42ff:fede:7aea  prefixlen 64  scopeid 0x0<global>
@@ -638,7 +638,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 If there is no ip address on your virtual machine, you can add one via:
 
-```
+```bash
 vim /etc/sysconfig/network-scripts/ifcfg-[interface-name]
 ---------------------------
 IPADDR=[ip-address]
@@ -652,7 +652,7 @@ systemctl restart network
 
 For node1:
 
-```
+```bash
 vim /etc/hosts
 -------------------------
 # Loopback entries; do not change.
@@ -666,7 +666,7 @@ vim /etc/hosts
 
 For node2:
 
-```
+```bash
 vim /etc/hosts
 -------------------------
 # Loopback entries; do not change.
@@ -682,13 +682,13 @@ vim /etc/hosts
 
 For both machines, enable ipv4 ip_forward:
 
-```
+```bash
 vim /etc/sysctl.conf
 --------------------
 net.ipv4.ip_forward=1
 ```
 
-```
+```bash
 sysctl -p
 --------------
 net.ipv4.ip_forward = 1
@@ -700,7 +700,7 @@ Finally, we need verify if they can communicate with each other by pinging each 
 
 Same, install this on both:
 
-```
+```bash
 yum update -y
 yum install etcd -y
 systemctl status etcd
@@ -718,7 +718,7 @@ Now, etcd has been installed, we need to change configurations!
 
 On node-01, change the config file into this:
 
-```
+```bash
 vim /etc/etcd/etcd.conf
 ----------------------------
 # [member]
@@ -776,7 +776,7 @@ ETCD_ADVERTISE_CLIENT_URLS="http://10.211.55.10:2379, http://10.211.55.10:4001"
 
 On node-02, change it to something similar:
 
-```
+```bash
 vim /etc/etcd/etcd.conf
 ----------------------------
 #[member]
@@ -836,7 +836,7 @@ ETCD_ADVERTISE_CLIENT_URLS="http://10.211.55.11:2379,http://10.211.55.11:4001"
 
 On node1:
 
-```
+```bash
 systemctl status etcd
 -------------------------
 ● etcd.service - Etcd Server
@@ -865,7 +865,7 @@ Apr 25 18:08:52 node1 bash[1278]: {"level":"info","ts":"2023-04-25T18:08:52.720+
 
 On node2:
 
-```
+```bash
 systemctl status etcd
 -------------------------
 ● etcd.service - Etcd Server
@@ -896,7 +896,7 @@ As etcd is using port 2380, if you have any errors/issues with starting it and s
 
 -   use `telnet` on node1:
 
-    ```
+    ```bash
     dnf install telnet
     telnet node2 2380
     ---------------
@@ -908,7 +908,7 @@ As etcd is using port 2380, if you have any errors/issues with starting it and s
 
 -   use `nmap` on node1:
 
-    ```
+    ```bash
     dnf install nmap
     nmap -p 2380 node2
     -----------------
@@ -925,7 +925,7 @@ As etcd is using port 2380, if you have any errors/issues with starting it and s
 
 -   use `lsof` on node2:
 
-    ```
+    ```bash
     lsof -i :2380
     -------------
     COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
@@ -941,7 +941,7 @@ As etcd is using port 2380, if you have any errors/issues with starting it and s
 
 -   use `netstat`:
 
-    ```
+    ```bash
     netstat -tunlp | grep -E '2380|4001'
     ----------------------
     tcp6       0      0 :::2380                 :::*                    LISTEN      1278/etcd
@@ -950,13 +950,13 @@ As etcd is using port 2380, if you have any errors/issues with starting it and s
 
 ### 5.5.8 Check the health of etcd cluster
 
-```
+```bash
 etcdctl endpoint health
 -----------------
 127.0.0.1:2379 is healthy: successfully committed proposal: took = 6.241474ms
 ```
 
-```
+```bash
 etcdctl member list
 ------------------
 95085dc63d7deee3, started, node1, http://10.211.55.10:2380, http://10.211.55.10:2379,http://10.211.55.10:4001, false
@@ -972,7 +972,7 @@ This is the official releases of Flannel: https://github.com/flannel-io/flannel/
 
 As I am using Apple M1 chip (arm64 arch), I will download the arm64 tar to my virtual Fedora machines:
 
-```
+```bash
 wget https://github.com/flannel-io/flannel/releases/download/v0.21.4/flannel-v0.21.4-linux-arm64.tar.gz
 
 ls
@@ -989,7 +989,7 @@ Then we are going to add flannel configuration to etcd via `etcdctl`:
 
 For node1:
 
-```
+```bash
 etcdctl --endpoints http://10.211.55.10:2379 put /coreos.com/network/config '{"Network": "10.0.0.0/16", "SubnetLen": 24, "SubnetMin": "10.0.1.0","SubnetMax": "10.0.20.0", "Backend": {"Type": "vxlan"}}'
 --------------
 OK
@@ -997,7 +997,7 @@ OK
 
 For node2:
 
-```
+```bash
 etcdctl --endpoints http://10.211.55.11:2379 put /coreos.com/network/config '{"Network": "10.0.0.0/16", "SubnetLen": 24, "SubnetMin": "10.0.1.0","SubnetMax": "10.0.20.0", "Backend": {"Type": "vxlan"}}'
 --------------
 OK
@@ -1007,14 +1007,14 @@ OK
 
 First copy the two extracted from our tar file to /usr/local/bin:
 
-```
+```bash
 cp ~/flanneld /usr/local/bin
 cp ~/mk-docker-opts.sh /usr/local/bin
 ```
 
 Then change the systemd config, for node1:
 
-```
+```bash
 vim /etc/systemd/system/flanneld.service
 -------------------------
 [Unit]
@@ -1041,7 +1041,7 @@ WantedBy=multi-user.target
 
 For node2:
 
-```
+```bash
 vim /etc/systemd/system/flanneld.service
 -------------------------
 [Unit]
@@ -1068,7 +1068,7 @@ WantedBy=multi-user.target
 
 After modifying the systemd config, we need to reload the daemon and start flanneld:
 
-```
+```bash
 systemctl daemon-reload
 systemctl start flanneld
 -------------------
@@ -1106,7 +1106,7 @@ Perfect!
 
 The config generated by flannel can be found here:
 
-```
+```bash
 ls /run/flannel/
 ---------------
 subnet.env
@@ -1121,7 +1121,7 @@ FLANNEL_IPMASQ=true
 
 Using `ifconfig` we can see that a network on the host machine named with 'flannel.1' has been created:
 
-```
+```bash
 ifconfig
 ---------------
 docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
@@ -1164,7 +1164,7 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 -   Node2:
 
-```
+```bash
 ls /run/flannel/
 --------------------
 subnet.env
@@ -1177,7 +1177,7 @@ FLANNEL_MTU=1450
 FLANNEL_IPMASQ=true
 ```
 
-```
+```bash
 ifconfig
 ------------------
 enp0s5: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
@@ -1215,7 +1215,7 @@ I will only demo using node1 here, node2 should be the same.
 
 Check docker env file:
 
-```
+```bash
 cat /run/docker_opts.env
 -----------------
 DOCKER_OPT_BIP="--bip=10.0.13.1/24"
@@ -1226,7 +1226,7 @@ DOCKER_OPTS=" --bip=10.0.13.1/24 --ip-masq=false --mtu=1450"
 
 Modify docker daemon service file:
 
-```
+```bash
 vim /lib/systemd/system/docker.service
 --------------------------
 .......
@@ -1244,14 +1244,14 @@ ExecStart=/usr/bin/dockerd \
 
 Reload daemon and restart docker:
 
-```
+```bash
 systemctl daemon-reload
 systemctl restart docker
 ```
 
 Check ip address of docker and flannel:
 
-```
+```bash
 ifconfig
 --------------------
 docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
@@ -1281,7 +1281,7 @@ Finally, let's run docker containers on two different hosts (node1 and node2), c
 
 On node1:
 
-```
+```bash
 docker run -it --name=busybox-node1 busybox
 -----------------
 / # ifconfig
@@ -1311,7 +1311,7 @@ PING 10.0.14.2 (10.0.14.2): 56 data bytes
 
 On node2:
 
-```
+```bash
 docker run -it --name=busybox-node2 busybox
 -------------------
 / # ifconfig
