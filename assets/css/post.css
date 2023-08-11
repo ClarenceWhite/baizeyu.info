@@ -1,138 +1,175 @@
-body {
-    font-family: "Merriweather", serif; /* 更新为 Merriweather 字体，这是一种非常适合阅读的衬线字体 */
-    background-color: #fafafa; /* 添加浅色背景色以减少视觉疲劳 */
-    color: #333; /* 设置默认文本颜色为深灰色，增加对比度 */
-    line-height: 1.6; /* 增加行高以改善阅读体验 */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+/* body {
+    font-family: "Arial", sans-serif;
     height: 100vh;
-    padding: 0;
-    margin: 0;
-}
+    overflow: hidden;
+} */
 
-.title h1,
-#toc {
-    font-family: "Roboto", sans-serif;
-}
-
-.post {
-    width: 80vw; /* 将宽度调整为80vw，以使页面在大屏幕上更集中 */
-    max-width: 1200px; /* 添加最大宽度以控制在大屏幕上的显示 */
+.post-page {
+    display: flex;
+    justify-content: space-evenly;
     padding: 2rem 2rem;
-    background-color: #fff; /* 添加背景色以区分内容区域 */
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* 添加轻微的阴影增加深度感 */
+    height: 92vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.post-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 2rem; /* 与 .post-page 的 padding 相等 */
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3); /* 内部阴影 */
+    z-index: -1; /* 将其放在内容区域下方 */
+}
+
+.post-content,
+.post-toc {
+    height: 100%;
+    overflow-y: auto;
     box-sizing: border-box;
-    flex-grow: 1;
+    bottom: 0;
+}
+
+.post-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    height: auto;
+    flex-grow: 1;
 }
 
 .title {
     text-align: center;
-    padding-bottom: 2rem;
-    width: 100%;
+    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
 }
 
 .title h1 {
-    color: #333; /* 深化标题颜色 */
-    font-size: 2.5em; /* 增加标题字体大小 */
+    font-size: 36px;
+    font-weight: bold;
 }
 
-.content-area {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    overflow-y: auto;
-    font-size: large;
+.content {
+    font-size: 16px;
+    line-height: 1.6;
 }
 
+.content img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* 为了消除可能的默认边距 */
+    margin: 0 auto; /* 如果你希望图片在其容器中居中 */
+    cursor: pointer;
+}
 
-#toc::after {
-    content: "";
-    position: absolute;
+/* 遮罩样式 */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 放大图片的样式 */
+.overlay img {
+    width: 80%;
+    height: 80%;
+    margin: auto;
+    cursor: pointer; /* 为了指示用户可以再次点击以关闭 */
+}
+
+/* TOC 样式 */
+.post-toc {
+    min-width: 20%;
+    max-width: fit-content;
+    box-sizing: border-box;
     top: 0;
     bottom: 0;
-    right: 0;
-    border-right: 2px solid #ddd; /* 使分隔线颜色更浅 */
+    padding: 2rem 2rem;
+    background-color: #c0c5ce;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow-x: auto;
 }
 
-.blog-content {
-    flex: 0 0 80%;
-    padding-left: 2rem;
-    height: 100%;
-    overflow-x: hidden; /* No horizontal scrolling */
-    overflow-y: auto;
-    text-align: justify;
+.toc-outline {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 1rem;
 }
 
-.blog-content img {
-    max-width: 100%; 
-    height: auto; 
-}
-
-#toc {
-    border-right: 1px solid #ddd;
-    flex: 0 0 20%;
-    height: 100%;
-    position: relative;
-    font-size: medium;
-}
-
-#toc a {
-    color: #333;
-    text-decoration: none;
-}
-
-#toc a:hover {
-    color: cornflowerblue;
-    text-decoration: underline;
-}
-
-/* Add styles for different levels of table of contents entries */
 .toc-h1 {
-    font-size: 1.2em;
-    margin-left: 0;
+    margin-top: 1rem;
+    font-size: 16px;
+    font-weight: bold;
 }
 
-.toc-h2 {s
-    font-size: 1.1em;
-    margin-left: 1em;
+.toc-h2 {
+    margin-top: 1rem;
+    margin-left: 10px;
+    font-size: 16px;
 }
 
 .toc-h3 {
-    font-size: 1em;
-    margin-left: 2em;
+    margin-top: 1rem;
+    margin-left: 20px;
+    font-size: 15px;
 }
 
 .toc-h4 {
-    font-size: 0.9em;
-    margin-left: 3em;
+    margin-top: 1rem;
+    margin-left: 30px;
+    font-size: 14px;
 }
 
 .toc-h5 {
-    font-size: 0.8em;
-    margin-left: 4em;
+    margin-top: 1rem;
+    margin-left: 40px;
+    font-size: 13px;
 }
 
 .toc-h6 {
-    font-size: 0.7em;
-    margin-left: 5em;
+    margin-top: 1rem;
+    margin-left: 50px;
+    font-size: 12px;
 }
 
-/* for all code blocks */
-/* pre code {
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    padding: 10px;
-    color: #d14;
-    white-space: pre-wrap;
-} */
+.toc-link-wrapper {
+    display: flex; /* 使用 flex 布局 */
+    align-items: center; /* 实现垂直居中 */
+    height: 30px;
+    line-height: 1; /* 调整 line-height */
+    border-left: 5px solid transparent;
+    padding-left: 10px;
+    transition: background-color 0.3s;
+}
 
+.toc-link-wrapper:hover {
+    background-color: #ffaaa5;
+}
+
+.toc-link-wrapper a {
+    text-decoration: none; /* 去除下划线 */
+    color: inherit;
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.toc-link-wrapper.active {
+    border-left: 5px solid #3498db;
+}
+
+/* 当鼠标悬停在链接上时，去除默认的蓝色 */
+.toc-link-wrapper a:hover {
+    color: inherit;
+}

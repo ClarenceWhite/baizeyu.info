@@ -2,7 +2,7 @@
     background-color: aliceblue;
     border-radius: 4px;
     height: 8vh;
-    max-height: 10%;
+    /* max-height: 10%; */
     width: 100%;
     max-width: 100vw !important;
 }

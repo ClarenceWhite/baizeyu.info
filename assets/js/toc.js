@@ -1,6 +1,8 @@
 window.onload = function () {
     var toc = document.getElementById('toc');
-    var headers = document.querySelectorAll('.blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4, .blog-content h5, .blog-content h6');
+    if (!toc) return;  // If the toc element is not found, exit the function
+
+    var headers = document.querySelectorAll('.post-content h1, .post-content h2, .post-content h3, .post-content h4, .post-content h5, .post-content h6');
 
     headers.forEach(function (header, index) {
         // Assign an id to each header. The id is based on the index of the header.
@@ -10,7 +12,7 @@ window.onload = function () {
         // Create a new link and append it to the table of contents.
         var link = document.createElement('a');
         link.href = '#' + headerId;
-        link.textContent = "> " + header.textContent;
+        link.textContent = header.textContent;
 
         // Assign classes based on header level to the link.
         if (header.tagName === 'H1') {
@@ -27,10 +29,23 @@ window.onload = function () {
             link.className = 'toc-h6';
         }
 
-        toc.appendChild(link);
+        // Create a wrapper for the link to make styling easier
+        var linkWrapper = document.createElement('div');
+        linkWrapper.className = 'toc-link-wrapper';
 
-        // Add a line break after each link for readability.
-        var lineBreak = document.createElement('br');
-        toc.appendChild(lineBreak);
+        // Append the link to the wrapper and the wrapper to the toc
+        toc.appendChild(linkWrapper);
+        linkWrapper.appendChild(link);
+
+        // Add click event to handle the active effect
+        linkWrapper.addEventListener('click', function () {
+            // Remove the active class from all other links
+            document.querySelectorAll('.toc-link-wrapper.active').forEach(function (wrapper) {
+                wrapper.classList.remove('active');
+            });
+
+            // Add the active class to the currently clicked link
+            linkWrapper.classList.add('active');
+        });
     });
 }
