@@ -1,9 +1,3 @@
-/* body {
-    font-family: "Arial", sans-serif;
-    height: 100vh;
-    overflow: hidden;
-} */
-
 .post-page {
     display: flex;
     justify-content: space-evenly;
@@ -11,6 +5,7 @@
     height: 92vh;
     overflow: hidden;
     position: relative;
+    flex-wrap: nowrap;
 }
 
 .post-page::before {
@@ -20,9 +15,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    margin: 2rem; /* 与 .post-page 的 padding 相等 */
-    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3); /* 内部阴影 */
-    z-index: -1; /* 将其放在内容区域下方 */
+    margin: 2rem;
+    /* box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3); */
+    z-index: -1;
 }
 
 .post-content,
@@ -38,12 +33,39 @@
     flex-direction: column;
     align-items: center;
     flex-grow: 1;
+    border: 1px solid #d3d3d3;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: #fff;
+    overflow-y: scroll;
+}
+
+/* Chrome, Edge, and Safari */
+.post-content::-webkit-scrollbar {
+    width: 16px;
+}
+
+.post-content::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 6px;
+}
+
+.post-content::-webkit-scrollbar-thumb {
+    background-color: #c89efc;
+    border-radius: 6px;
+    border: 3px solid #f0f0f0;
+}
+
+/* Firefox */
+.post-content {
+    scrollbar-color: #c89efc #f0f0f0;
+    scrollbar-width: thin;
 }
 
 .title {
     text-align: center;
-    margin-bottom: 1.5rem;
-    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
 }
 
 .title h1 {
@@ -57,6 +79,7 @@
 }
 
 .content img {
+    width: 60%;
     max-width: 100%;
     height: auto;
     display: block; /* 为了消除可能的默认边距 */
@@ -83,22 +106,22 @@
     width: 80%;
     height: 80%;
     margin: auto;
-    cursor: pointer; /* 为了指示用户可以再次点击以关闭 */
+    cursor: pointer;
 }
 
 /* TOC 样式 */
 .post-toc {
-    width: auto;
-    max-width: fit-content;
-    box-sizing: border-box;
-    top: 0;
-    bottom: 0;
-    padding: 2rem 2rem;
     background-color: #c0c5ce;
     border-radius: 5px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    white-space: nowrap;
-    overflow-x: auto;
+    padding: 2rem;
+    width: auto;
+    min-width: 100px;
+    max-width: 400px;
+    overflow: auto;
+    box-sizing: border-box;
+    position: relative;
+    /* white-space: nowrap; */
 }
 
 .toc-outline {
@@ -108,68 +131,59 @@
 }
 
 .toc-h1 {
-    margin-top: 1rem;
     font-size: 16px;
     font-weight: bold;
 }
 
 .toc-h2 {
-    margin-top: 1rem;
     margin-left: 10px;
     font-size: 16px;
 }
 
 .toc-h3 {
-    margin-top: 1rem;
     margin-left: 20px;
     font-size: 15px;
 }
 
 .toc-h4 {
-    margin-top: 1rem;
     margin-left: 30px;
     font-size: 14px;
 }
 
 .toc-h5 {
-    margin-top: 1rem;
     margin-left: 40px;
     font-size: 13px;
 }
 
 .toc-h6 {
-    margin-top: 1rem;
     margin-left: 50px;
     font-size: 12px;
 }
 
 .toc-link-wrapper {
-    display: flex; /* 使用 flex 布局 */
-    align-items: center; /* 实现垂直居中 */
-    height: 30px;
-    line-height: 1; /* 调整 line-height */
+    display: flex;
+    align-items: center;
+    line-height: 1.2;
     border-left: 5px solid transparent;
-    padding-left: 10px;
     transition: background-color 0.3s;
+    margin-top: 0.3rem;
+    padding: 0.6rem 0;
 }
 
 .toc-link-wrapper:hover {
-    background-color: #ffaaa5;
+    background-color: #86dcaa;
 }
 
 .toc-link-wrapper a {
-    text-decoration: none; /* 去除下划线 */
+    text-decoration: none !important;
     color: inherit;
-    display: block;
-    height: 100%;
-    width: 100%;
+    flex-grow: 1;
 }
 
 .toc-link-wrapper.active {
     border-left: 5px solid #3498db;
 }
 
-/* 当鼠标悬停在链接上时，去除默认的蓝色 */
 .toc-link-wrapper a:hover {
     color: inherit;
 }
